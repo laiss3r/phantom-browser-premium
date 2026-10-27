@@ -86,4 +86,5 @@ jobs:
           path: |
             test-results/**/installed-fingerprint.json
             test-results/**/controlled-local-stun.json
+            test-results/**/controlled-fingerprint.json
           if-no-files-found: warn

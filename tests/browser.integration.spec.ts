@@ -117,7 +117,8 @@ test('Cache Storage and service-worker state remain profile-local and survive re
  expect(await f.service.page(b.id).evaluate(()=>caches.keys())).toEqual([]);
 });
 
-test('actual UA headers, client hints and native fingerprint samples are coherent and stable',async()=>{
+test('actual UA headers, client hints and native fingerprint samples are coherent and stable',async({browserName},testInfo)=>{
+ expect(browserName).toBe('chromium');
  const ua=process.platform==='win32'?'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36';
  const p=f.service.create({name:'Observed identity',launchUrl:origin,config:{userAgent:ua,locale:'en-GB',timezoneId:'Africa/Nairobi',deviceScaleFactor:1.25,webrtcPolicy:'disable-non-proxied-udp'}});await f.service.launch(p.id);
  const first=await f.service.diagnose(p.id),headers=await f.service.page(p.id).evaluate(()=>fetch('/headers').then(r=>r.json()));
@@ -127,6 +128,7 @@ test('actual UA headers, client hints and native fingerprint samples are coheren
  expect(JSON.stringify(first.observed.webRTC)).not.toMatch(/192\.168\.|127\.0\.0\.1|\.local/);expect(first.observed.leakChecks.dns).toContain('not-tested');
  await f.service.stop(p.id);await f.service.launch(p.id);const again=await f.service.diagnose(p.id);
  expect(again.observed.canvas.sha256).toBe(first.observed.canvas.sha256);expect(again.observed.audio.sha256).toBe(first.observed.audio.sha256);expect(again.observed.languages).toEqual(first.observed.languages);expect(again.inconsistencies).toEqual([]);
+ const {processId:ignored,...result}=again;void ignored;fs.writeFileSync(testInfo.outputPath('controlled-fingerprint.json'),JSON.stringify({source:'real persistent profile browser on controlled local origin',result,headers:{userAgent:headers['user-agent'],clientHints:headers['sec-ch-ua'],platform:headers['sec-ch-ua-platform'],language:headers['accept-language']}},null,2));
 });
 
 test('proxy probe rejects malformed public-IP bodies instead of claiming connectivity verification',async()=>{
