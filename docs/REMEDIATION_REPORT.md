@@ -1,3 +1,5 @@
+> **Master-stage update:** Historical remediation/green-CI record. The subsequent MASTER_UPGRADE_REPORT.md has new code and local verification, but fresh Windows CI is pending. Do not apply this old installer/CI proof to newer source.
+
 # Remediation and capability report — 0.2.0-dev.2 candidate
 
 Date: 2026-10-27. Branch: `feat/local-workspaces-v0.2`. **Unreleased; no new tag, release or main merge authorized.** Actual starting point was v0.2.0-dev.1, not the historical v0.1.0. Stable v0.1.1 and all previous release assets are preserved.

@@ -1,5 +1,15 @@
 # Changelog
 
+## Master-upgrade follow-up — unreleased development, not yet pushed
+
+- Validate/canonicalize proxy hosts and legacy IPv6 formatting; meaningful client-side host errors.
+- Strengthen desktop/x64/repeated-UA and high-entropy architecture/full-version/platform consistency checks.
+- Bound/private diagnostic failures, reject stale stopped-profile observations, read already-granted coordinates without prompting.
+- Explicit production proxy-probe sandbox; derived stopping state and guarded existing UI; clear Supported/Partial/Diagnostic only/Unsupported labels.
+- Add HTTP407/no-direct-fallback, SOCKS hostname-resolution and real local STUN fixtures. The requested UDP policy does not block the measured loopback path; no external no-leak claim.
+- Fresh Linux source tests:104 units,29 Chromium +Windows TLS skip,4 Electron +DPAPI skip. New Windows packaging/installed tests pending authenticated CI. Concrete engine/license review and pinned-vs-Stable patch gap recorded in [fresh report](docs/MASTER_UPGRADE_REPORT.md).
+
+
 ## 0.2.0-dev.2 — unreleased remediation candidate
 
 - Reproduce/fix screenshot privacy exposure outside HTML root bounds; write only opaque same-size derivatives, with size/PNG regression checks and best-effort original-buffer clearing.

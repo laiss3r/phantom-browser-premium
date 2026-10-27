@@ -1,3 +1,5 @@
+> **Master-stage update:** Fresh host validation accepts canonical DNS/IPv4/plain or bracketed IPv6 and rejects embedded ports/malformed/ambiguous numeric addresses. IPv6 transport/provider reachability is not certified. HTTP407/no-forward/no-direct-fallback and SOCKS proxy-received unresolved hostname now have real fixtures. Controlled Linux STUN records UDP even with the requested policy and HTTP proxy: experimental, not a firewall; no public DNS/STUN certificate. Production probe sandbox is explicit; fresh Windows execution pending.
+
 # Proxy configuration, verification and limits
 
 Profiles use Chromium's per-context HTTP/HTTPS/SOCKS5 proxy options. Credentials are loaded only in the main process through Windows DPAPI, not returned to the renderer, logged or exported. There is no production plaintext fallback. A pending credential write is rejected if an assigned profile starts or shutdown begins.

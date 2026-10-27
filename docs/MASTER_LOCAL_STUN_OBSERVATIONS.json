@@ -1,0 +1,40 @@
+{
+  "source_commit": "9c0e9b33daae58b702f2449e26e8cb71189e44a5",
+  "os": "Debian GNU/Linux 13 x64",
+  "scope": "Controlled local Chromium fixture; not fresh installed Windows or public DNS/STUN certification",
+  "evidence": [
+    {
+      "policy": "default",
+      "proxyAssigned": false,
+      "httpForwardedRequests": 0,
+      "udpBindingRequests": 1,
+      "candidateTypes": [
+        "host",
+        "srflx"
+      ],
+      "scope": "loopback fixture with TEST-NET mapping, not real public IP/DNS leak certification"
+    },
+    {
+      "policy": "disable-non-proxied-udp",
+      "proxyAssigned": false,
+      "httpForwardedRequests": 0,
+      "udpBindingRequests": 1,
+      "candidateTypes": [
+        "host",
+        "srflx"
+      ],
+      "scope": "loopback fixture with TEST-NET mapping, not real public IP/DNS leak certification"
+    },
+    {
+      "policy": "disable-non-proxied-udp",
+      "proxyAssigned": true,
+      "httpForwardedRequests": 2,
+      "udpBindingRequests": 1,
+      "candidateTypes": [
+        "host",
+        "srflx"
+      ],
+      "scope": "loopback fixture with TEST-NET mapping, not real public IP/DNS leak certification"
+    }
+  ]
+}

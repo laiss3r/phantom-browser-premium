@@ -1,3 +1,5 @@
+> **Master-stage update:** Fresh official channel check reports Stable156.0.8078.47 vs pinned156.0.8078.4. A reviewed compatible Playwright/runtime update and new Windows gates are stable-release blockers. Do not generate new trust automatically from a download or silently substitute a fork; see MASTER_ENGINE_DECISION.md.
+
 # Chromium runtime update and rollback
 
 No unchecked in-app runtime updater is implemented. A bundled engine change is a reviewed application build, not a URL a renderer/user can supply. Current trusted Chromium: 156.0.8078.4, Playwright revision 1248, Windows/Linux x64 only.

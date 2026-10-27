@@ -1,0 +1,231 @@
+{
+  "source_commit": "9c0e9b33daae58b702f2449e26e8cb71189e44a5",
+  "os": "Debian GNU/Linux 13 x64",
+  "scope": "Controlled local Chromium fixture; not fresh installed Windows or public DNS/STUN certification",
+  "evidence": {
+    "source": "real persistent profile browser on controlled local origin",
+    "result": {
+      "expected": {
+        "version": 1,
+        "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "locale": "en-GB",
+        "timezoneId": "Africa/Nairobi",
+        "colorScheme": "dark",
+        "reducedMotion": "no-preference",
+        "deviceScaleFactor": 1.25,
+        "webrtcPolicy": "disable-non-proxied-udp"
+      },
+      "observed": {
+        "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+        "language": "en-GB",
+        "languages": [
+          "en-GB"
+        ],
+        "timezone": "Africa/Nairobi",
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "screen": {
+          "width": 1280,
+          "height": 800
+        },
+        "devicePixelRatio": 1.25,
+        "colorScheme": "dark",
+        "reducedMotion": false,
+        "hardwareConcurrency": 2,
+        "deviceMemory": 2,
+        "platform": "Linux x86_64",
+        "clientHints": {
+          "brands": [
+            {
+              "brand": "Not:A-Brand",
+              "version": "8"
+            },
+            {
+              "brand": "Chromium",
+              "version": "156"
+            }
+          ],
+          "mobile": false,
+          "platform": "Linux"
+        },
+        "highEntropyClientHints": {
+          "architecture": "x86",
+          "bitness": "64",
+          "brands": [
+            {
+              "brand": "Not:A-Brand",
+              "version": "8"
+            },
+            {
+              "brand": "Chromium",
+              "version": "156"
+            }
+          ],
+          "fullVersionList": [
+            {
+              "brand": "Not:A-Brand",
+              "version": "8.0.0.0"
+            },
+            {
+              "brand": "Chromium",
+              "version": "156.0.8078.4"
+            }
+          ],
+          "mobile": false,
+          "model": "",
+          "platform": "Linux",
+          "platformVersion": "",
+          "wow64": false
+        },
+        "webglVendor": "WebKit",
+        "webglRenderer": "WebKit WebGL",
+        "unmaskedWebglVendor": "Google Inc. (Google)",
+        "unmaskedWebglRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+        "canvas": {
+          "status": "measured-native",
+          "sha256": "4e4021b679471fce0d72a3e6d0a1a6f2d19318bb858d0d1a4781cd65ecd05ef9"
+        },
+        "audio": {
+          "status": "measured-native",
+          "sha256": "b71e648ca8437bd608b31584cd8ab90852c646248aa948e969c719ff570566e6"
+        },
+        "geolocation": {
+          "status": "not-granted",
+          "coordinates": null
+        },
+        "fonts": {
+          "method": "generic-family metrics only; not installed-font enumeration",
+          "metrics": {
+            "serif": 246.2265625,
+            "sans-serif": 258.6953125,
+            "monospace": 260.0859375
+          }
+        },
+        "permissions": {
+          "geolocation": "denied",
+          "camera": "denied",
+          "microphone": "denied"
+        },
+        "geolocationPermission": "denied",
+        "media": {
+          "status": "observed",
+          "kinds": [],
+          "exposedLabels": 0,
+          "identities": "omitted"
+        },
+        "webRTC": {
+          "status": "observed-local-only",
+          "candidateTypes": [
+            "host"
+          ],
+          "protocols": [
+            "udp"
+          ],
+          "timedOut": false
+        },
+        "leakChecks": {
+          "dns": "not-tested: requires controlled external authoritative DNS",
+          "publicIP": "not-tested: use explicit proxy probe",
+          "webRTC": "local candidates only; no public STUN/TURN verification"
+        },
+        "capabilities": {
+          "canvas": true,
+          "audio": true,
+          "webRTC": true,
+          "mediaEnumeration": true,
+          "serviceWorker": true,
+          "cacheStorage": true,
+          "indexedDB": true
+        },
+        "webdriver": true,
+        "secureContext": true
+      },
+      "inconsistencies": [],
+      "capabilities": [
+        {
+          "property": "UA and client hints",
+          "mode": "partial",
+          "detail": "Native desktop OS and bundled Chromium only; reduced or exact runtime UA. Headers/low/high-entropy hints must be observed. No cross-OS identity."
+        },
+        {
+          "property": "Locale, languages, timezone",
+          "mode": "configurable",
+          "detail": "Supported context options; diagnosed in the actual page."
+        },
+        {
+          "property": "Viewport, screen, DPR",
+          "mode": "configurable",
+          "detail": "Validated persistent context options; dimensions and DPR are measured."
+        },
+        {
+          "property": "Geolocation",
+          "mode": "configurable",
+          "detail": "Explicit coordinates and permission required. Read granted coordinates with a bounded call; denied without configured consent."
+        },
+        {
+          "property": "CPU, device memory, platform",
+          "mode": "native-only",
+          "detail": "Read actual navigator values; no arbitrary hardware/platform override."
+        },
+        {
+          "property": "WebGL",
+          "mode": "native-only",
+          "detail": "Report native masked/unmasked vendor and renderer when permitted; no vendor/noise spoofing."
+        },
+        {
+          "property": "Canvas and audio",
+          "mode": "native-only",
+          "detail": "Hash controlled native samples; no injected noise or randomized output."
+        },
+        {
+          "property": "Fonts",
+          "mode": "partial",
+          "detail": "Generic-family metrics only, not an installed-font inventory or a spoofed font set."
+        },
+        {
+          "property": "WebRTC",
+          "mode": "partial",
+          "detail": "Experimental requested Chromium policy, not a UDP firewall. Controlled Linux loopback STUN still sends UDP; no candidate addresses in production diagnostics, public STUN/TURN or leak certification."
+        },
+        {
+          "property": "Media devices and permissions",
+          "mode": "native-only",
+          "detail": "Observe permission states and device-kind counts without getUserMedia; no names, device IDs or identity spoofing."
+        },
+        {
+          "property": "Feature APIs",
+          "mode": "native-only",
+          "detail": "Observed runtime availability. No masking of webdriver or removal of fundamental browser protections."
+        },
+        {
+          "property": "External DNS leak verification",
+          "mode": "unsupported",
+          "detail": "Requires opt-in controlled external authoritative DNS infrastructure; local checks/public-IP probes are insufficient."
+        }
+      ],
+      "launchPolicy": {
+        "requested": "disable-non-proxied-udp",
+        "nonProxiedUDPArgumentObserved": true
+      },
+      "limitations": [
+        "Native hardware/graphics/canvas/audio/font/media behavior is measured, not spoofed",
+        "Canvas/audio hashes and native details are fingerprint identifiers: keep local diagnostic data private",
+        "Local ICE uses no STUN/TURN and records no candidate addresses; public DNS/WebRTC leak protection is not certified",
+        "The requested UDP policy is not a firewall: Linux loopback STUN still sent UDP with an HTTP proxy; public/Windows STUN behavior remains unverified",
+        "Client hints and permission policies can be unavailable on insecure or restricted origins; unavailable is not a successful verification"
+      ]
+    },
+    "headers": {
+      "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "clientHints": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+      "platform": "\"Linux\"",
+      "language": "en-GB"
+    }
+  }
+}

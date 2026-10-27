@@ -1,3 +1,5 @@
+> **Master-stage update:** Fresh validation now checks high-entropy full version/architecture/bitness/platform/mobile/WOW64 and repeated/32-bit custom-UA contradictions. Already-granted geo coordinates are bounded/read/compared; never prompted by diagnostics. Native-only rows display **Diagnostic only**. Fresh Linux evidence is in MASTER_LOCAL_FINGERPRINT_OBSERVATIONS.json; new Windows validation remains pending.
+
 # Fingerprint architecture and capability boundaries
 
 Phantom's Electron window is the **manager UI**, not the browsing engine. Profiles run in separately launched, independently pinned Playwright Chromium persistent contexts. Do not equate Electron window preferences with native antidetect functionality.

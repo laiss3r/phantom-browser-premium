@@ -1,3 +1,5 @@
+> **Fresh master-upgrade stage:** new local source `9c0e9b3` passes Linux unit/browser/Electron tests, but **has not been pushed or validated on fresh Windows CI** (Git authentication unavailable). See [current report](docs/MASTER_UPGRADE_REPORT.md). Remains development-only; the pinned browser also needs a reviewed security-patch update. Older green CI/installer evidence below applies only to its recorded source.
+
 > **Unreleased remediation candidate: 0.2.0-dev.2.** New screenshot privacy, durable-write rollback, fingerprint observation and recovery fixes are described in [the remediation report](docs/REMEDIATION_REPORT.md). No new release/tag/main merge is authorized. Published v0.2.0-dev.1 report PNGs may contain fixed-position content outside the old DOM mask: treat old reports as sensitive.
 
 # Phantom Browser — local Windows browser workspaces

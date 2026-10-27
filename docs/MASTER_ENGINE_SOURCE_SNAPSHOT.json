@@ -1,0 +1,99 @@
+{
+  "CloakHQ/cloakbrowser": {
+    "source": "https://api.github.com/repos/CloakHQ/cloakbrowser",
+    "pushed_at": "2026-10-27T01:11:39Z",
+    "license_spdx": "MIT",
+    "head": "146f46e07d4213e54f2c1440aa20093474823371",
+    "head_committer_date": "2026-10-25T17:44:59Z",
+    "latest_listed_release": {
+      "tag": "chromium-v155.0.8059.39.1-pro",
+      "prerelease": false,
+      "published_at": "2026-10-20T18:15:39Z",
+      "asset_names": [
+        "SHA256SUMS",
+        "SHA256SUMS.sig"
+      ]
+    }
+  },
+  "daijro/camoufox": {
+    "source": "https://api.github.com/repos/daijro/camoufox",
+    "pushed_at": "2026-10-26T18:54:10Z",
+    "license_spdx": "MPL-2.0",
+    "head": "39940c849a561534b315a225b2753cd4fa4bacf4",
+    "head_committer_date": "2026-10-26T18:54:09Z",
+    "latest_listed_release": {
+      "tag": "v158.0-beta.40",
+      "prerelease": true,
+      "published_at": "2026-10-19T22:38:51Z",
+      "asset_names": [
+        "camoufox-158.0-beta.40-lin.arm64.zip",
+        "camoufox-158.0-beta.40-lin.x86_64.zip",
+        "camoufox-158.0-beta.40-mac.arm64.zip",
+        "camoufox-158.0-beta.40-mac.x86_64.zip",
+        "camoufox-158.0-beta.40-win.i686.zip",
+        "camoufox-158.0-beta.40-win.x86_64.zip",
+        "manifest.json"
+      ]
+    }
+  },
+  "rebrowser/rebrowser-patches": {
+    "source": "https://api.github.com/repos/rebrowser/rebrowser-patches",
+    "pushed_at": "2026-10-19T22:51:16Z",
+    "license_spdx": "MIT",
+    "head": "00c62cde68d78d734330ca1b558db16fe09755df",
+    "head_committer_date": "2026-10-19T22:51:12Z",
+    "latest_listed_release": {
+      "tag": "v1.1.2",
+      "prerelease": false,
+      "published_at": "2026-10-19T18:56:16Z",
+      "asset_names": [
+        "rebrowser-patches-1.1.2.tgz",
+        "rebrowser-playwright-1.64.101.tgz",
+        "rebrowser-playwright-core-1.64.101.tgz",
+        "rebrowser-puppeteer-25.14.101.tgz",
+        "rebrowser-puppeteer-core-25.14.101.tgz"
+      ]
+    }
+  },
+  "ungoogled-software/ungoogled-chromium": {
+    "source": "https://api.github.com/repos/ungoogled-software/ungoogled-chromium",
+    "pushed_at": "2026-10-25T13:46:38Z",
+    "license_spdx": "BSD-3-Clause",
+    "head": "8025d4523980977200ea825bcc03ebddaa0ccb8f",
+    "head_committer_date": "2026-10-24T11:35:04Z",
+    "latest_listed_release": {
+      "tag": "156.0.8078.47-1",
+      "prerelease": false,
+      "published_at": "2026-10-23T01:55:42Z",
+      "asset_names": []
+    }
+  },
+  "official_chrome_for_testing_channels": {
+    "source": "https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions.json",
+    "response": {
+      "timestamp": "2026-10-27T19:19:40.754Z",
+      "channels": {
+        "Stable": {
+          "channel": "Stable",
+          "version": "156.0.8078.47",
+          "revision": "1706539"
+        },
+        "Beta": {
+          "channel": "Beta",
+          "version": "157.0.8103.15",
+          "revision": "1717349"
+        },
+        "Dev": {
+          "channel": "Dev",
+          "version": "158.0.8117.2",
+          "revision": "1724140"
+        },
+        "Canary": {
+          "channel": "Canary",
+          "version": "158.0.8127.2",
+          "revision": "1727472"
+        }
+      }
+    }
+  }
+}

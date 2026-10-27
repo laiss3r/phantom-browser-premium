@@ -1,3 +1,5 @@
+> **Master-stage update:** New source is not the old green-CI installer. See MASTER_UPGRADE_REPORT.md for exact source and fresh Windows blockers. Invalid proxy Host must omit scheme/port; bracketed IPv6 is normalized once. Diagnostics fail privately after six seconds and reject stale results after stop. Stopping is now a real displayed state. Requested UDP policy is experimental and does not block tested loopback STUN.
+
 # Troubleshooting without losing profiles
 
 ## Browser lock / recovery required

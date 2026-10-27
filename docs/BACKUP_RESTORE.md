@@ -1,3 +1,5 @@
+> **Master-stage update:** Authenticated encrypted backups do not protect a currently running compromised browser/session or OS/JavaScript memory. Newly derived stopping state is supported by this development schema; use separate pre-upgrade data copies rather than forcing an older strict app to read newer saved data.
+
 # Backup and restoration guide
 
 Stop the profile and wait for pending work before backup, duplicate or edit. Browser profile contents can grant account access. Protect the application-data directory and backups independently of the installer.

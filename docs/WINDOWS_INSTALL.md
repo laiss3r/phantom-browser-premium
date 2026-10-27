@@ -1,3 +1,5 @@
+> **Master-stage update:** Fresh master source9c0e9b3 has not produced a Windows installer or run hosted Windows tests. Historical installer/hash/results below apply only to old recorded source. New Windows10/11/DPAPI/install/signature qualification is pending; do not promote this source based on old assets.
+
 > **New candidate:** 0.2.0-dev.2 fixes additional privacy/durability issues but is not published. See [remediation evidence](REMEDIATION_REPORT.md); do not confuse the older v0.2.0-dev.1 release with the new candidate.
 
 > Published latest installer: v0.1.1. The development prerelease v0.2.0-dev.1 is also published after successful Linux/Windows Server 2025 CI run 40507389557, including DPAPI and installed-runtime tamper/repair. v0.1.1 remains latest stable. Manual consumer Windows 10/11 upgrade/uninstall checks remain pending.

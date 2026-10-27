@@ -1,3 +1,5 @@
+> Current master-stage findings/results: [fresh report](docs/MASTER_UPGRADE_REPORT.md). Diagnostics now have a six-second private-error boundary and stale-result guard; production proxy probes explicitly enable Chromium sandboxing. Controlled Linux STUN still sends loopback UDP with the requested policy and an HTTP proxy: **not a UDP firewall/no-leak promise**. Fresh Windows/security-patch qualification remains pending.
+
 # Security policy and boundaries
 
 Phantom Browser is a local-first profile manager, not a stealth or anonymity product. This repository has not received an independent penetration test or a complete third-party security audit. Do not disclose credentials, cookies or private profiles in public issues. Use GitHub private vulnerability reporting if enabled; otherwise ask the maintainer for a private contact without publishing exploit material or session data.

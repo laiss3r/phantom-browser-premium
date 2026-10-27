@@ -1,0 +1,163 @@
+{
+  "date": "2026-10-27",
+  "branch": "feat/local-workspaces-v0.2",
+  "baseline_remote_commit": "6c0029c42bb15da5ca029a5af10a206b583f3662",
+  "tested_source_commit": "9c0e9b33daae58b702f2449e26e8cb71189e44a5",
+  "package_version": "0.2.0-dev.2",
+  "source_commits": [
+    "86d58a2",
+    "f47161d",
+    "9c0e9b3"
+  ],
+  "fresh_checks": [
+    {
+      "command": "npm run typecheck",
+      "source_commit": "9c0e9b33daae58b702f2449e26e8cb71189e44a5",
+      "os": "Debian GNU/Linux 13 x64",
+      "result": {
+        "result": "passed"
+      },
+      "log": "/home/user/audit-20261027/typecheck-final.log",
+      "log_bytes": 57,
+      "log_sha256": "c6e72a6f5fb860b3775e60dc9b1ad99f39e372e8f578ae9242f7d91af18f2363"
+    },
+    {
+      "command": "npm run lint",
+      "source_commit": "9c0e9b33daae58b702f2449e26e8cb71189e44a5",
+      "os": "Debian GNU/Linux 13 x64",
+      "result": {
+        "result": "passed"
+      },
+      "log": "/home/user/audit-20261027/lint-final.log",
+      "log_bytes": 56,
+      "log_sha256": "10d36aa4df9fcd9afd84266201fe9b450e0c2e7d5de700d2b4bcd5cd4a561856"
+    },
+    {
+      "command": "npm test",
+      "source_commit": "9c0e9b33daae58b702f2449e26e8cb71189e44a5",
+      "os": "Debian GNU/Linux 13 x64",
+      "result": {
+        "passed": 104,
+        "files": 14,
+        "skipped": 0
+      },
+      "log": "/home/user/audit-20261027/unit-final.log",
+      "log_bytes": 2651,
+      "log_sha256": "16ff1ee257938b7c2b4d4b54da5e234a543b6956ecf883a272302c55b6dcfc34"
+    },
+    {
+      "command": "npm run test:runtime",
+      "source_commit": "9c0e9b33daae58b702f2449e26e8cb71189e44a5",
+      "os": "Debian GNU/Linux 13 x64",
+      "result": {
+        "passed": 12,
+        "skipped": 0
+      },
+      "log": "/home/user/audit-20261027/runtime-final.log",
+      "log_bytes": 530,
+      "log_sha256": "ab25fae7e02d47947c092894c517b6550e058f5f601e05bed7e2989527c3e9d7"
+    },
+    {
+      "command": "npm run verify:runtime",
+      "source_commit": "9c0e9b33daae58b702f2449e26e8cb71189e44a5",
+      "os": "Debian GNU/Linux 13 x64",
+      "result": {
+        "verified_files": 303
+      },
+      "log": "/home/user/audit-20261027/runtime-verify-final.log",
+      "log_bytes": 146,
+      "log_sha256": "a03ad3be49fb0b8330620143ac40ad86fb2d457848c197af519c65e481d66003"
+    },
+    {
+      "command": "npm run test:integration -- --output=test-results/browser",
+      "source_commit": "9c0e9b33daae58b702f2449e26e8cb71189e44a5",
+      "os": "Debian GNU/Linux 13 x64",
+      "result": {
+        "passed": 29,
+        "skipped": 1,
+        "skip_reason": "trusted HTTPS test requires disposable Windows trust store"
+      },
+      "log": "/home/user/audit-20261027/browser-final.log",
+      "log_bytes": 4238,
+      "log_sha256": "56a1c5e1eb9da6ab46184ad7e5f1164e7bef06322262c0c4a255a246e1f13980"
+    },
+    {
+      "command": "npm run build",
+      "source_commit": "9c0e9b33daae58b702f2449e26e8cb71189e44a5",
+      "os": "Debian GNU/Linux 13 x64",
+      "result": {
+        "result": "passed"
+      },
+      "log": "/home/user/audit-20261027/build-final.log",
+      "log_bytes": 532,
+      "log_sha256": "ab787d5f55315bc4d546bc3e84bfab04280067d82ba62338d1fb121ed0a4e5f6"
+    },
+    {
+      "command": "xvfb-run -a npm run test:desktop -- --output=test-results/desktop",
+      "source_commit": "9c0e9b33daae58b702f2449e26e8cb71189e44a5",
+      "os": "Debian GNU/Linux 13 x64",
+      "result": {
+        "passed": 4,
+        "skipped": 1,
+        "skip_reason": "Windows DPAPI unavailable on Linux"
+      },
+      "log": "/home/user/audit-20261027/desktop-final.log",
+      "log_bytes": 856,
+      "log_sha256": "b0cc5320a9d8f3da92bb5812d053fdff0679c2339c5ac8543b7f23fb9c9f70d7"
+    },
+    {
+      "command": "npm audit --json",
+      "source_commit": "9c0e9b33daae58b702f2449e26e8cb71189e44a5",
+      "os": "Debian GNU/Linux 13 x64",
+      "result": {
+        "vulnerabilities": 0
+      },
+      "log": "/home/user/audit-20261027/audit-final.json",
+      "log_bytes": 365,
+      "log_sha256": "9105afbd9feb7dafff0b09aa007202c68d5d153592fc709b7c38361f7a38e0b0"
+    },
+    {
+      "command": "npm audit --omit=dev --json",
+      "source_commit": "9c0e9b33daae58b702f2449e26e8cb71189e44a5",
+      "os": "Debian GNU/Linux 13 x64",
+      "result": {
+        "vulnerabilities": 0
+      },
+      "log": "/home/user/audit-20261027/audit-production-final.json",
+      "log_bytes": 365,
+      "log_sha256": "9105afbd9feb7dafff0b09aa007202c68d5d153592fc709b7c38361f7a38e0b0"
+    },
+    {
+      "command": "npm run licenses",
+      "source_commit": "9c0e9b33daae58b702f2449e26e8cb71189e44a5",
+      "os": "Debian GNU/Linux 13 x64",
+      "result": {
+        "result": "passed; inventory not legal certification"
+      },
+      "log": "/home/user/audit-20261027/licenses-final.log",
+      "log_bytes": 1028,
+      "log_sha256": "01b82b9bf30f649364c10d9f1f915e18dccabdecee943552d3f662aa1796a7e8"
+    }
+  ],
+  "environment_repair": [
+    "Pinned runtime re-provisioning after snapshot integrity failure; manifest unchanged",
+    "Xvfb/browser Linux dependencies and GTK3 installed"
+  ],
+  "fresh_windows_ci": "pending: authenticated Git push unavailable",
+  "fresh_installer_produced": false,
+  "manual_windows_10_11": "pending",
+  "publisher_signature_verified": false,
+  "pushed_new_commits": false,
+  "public_tag_release_main_or_permissions_changed": false,
+  "engine_migrated": false,
+  "external_public_DNS_STUN_provider_certification": false,
+  "upstream_stable_runtime": "156.0.8078.47",
+  "pinned_runtime": "156.0.8078.4",
+  "stable_release_recommendation": "not ready; development only",
+  "historical_windows_evidence": {
+    "run": 40565021705,
+    "tested_source": "02d0a4bc6b326d663a0ae5220fc49eaa85d793b2",
+    "applies_to_new_code": false
+  },
+  "browser_artifacts_retained_after_desktop_command": true
+}
