@@ -1,3 +1,4 @@
+import {proxyHostSchema} from '../shared/schema';
 import fs from 'node:fs';
 import path from 'node:path';
 import {randomUUID, createHash} from 'node:crypto';
@@ -108,7 +109,7 @@ export class Service {
   profiles(): Profile[] {
     return this.db.rows('SELECT data FROM profiles').map(r => {
       const p = profileSchema.parse(JSON.parse(String(r.data)));
-      return {...p, status: this.running.get(p.id)?.recoveryRequired ? 'error' : this.running.has(p.id) ? this.running.get(p.id)?.context ? 'running' : 'starting' : p.lastError ? 'error' : 'stopped'};
+      return {...p, status: this.running.get(p.id)?.recoveryRequired ? 'error' : this.running.has(p.id) ? this.running.get(p.id)?.closing ? 'stopping' : this.running.get(p.id)?.context ? 'running' : 'starting' : p.lastError ? 'error' : 'stopped'};
     });
   }
 
@@ -327,8 +328,9 @@ export class Service {
     let credentials: {username?: string; password?: string} = {};
     try {if (row.secret) credentials = z.object({username: z.string().optional(), password: z.string().optional()}).parse(JSON.parse(await this.secrets.open(Buffer.from(row.secret as Uint8Array))));}
     catch {throw Error('Secure credential decryption unavailable; no plaintext fallback');}
+    const host=proxyHostSchema.parse(p.host); // validate retained legacy records too
     return {
-      server: `${p.protocol}://${p.host.includes(':') ? '[' + p.host + ']' : p.host}:${p.port}`,
+      server: `${p.protocol}://${host.includes(':') ? '[' + host + ']' : host}:${p.port}`,
       ...credentials,
     };
   }
@@ -521,7 +523,7 @@ export class Service {
     try {
       this.verifyBrowserRuntime();
       const browser = await chromium.launch({
-        headless: true,
+        headless: true, chromiumSandbox: !this.headless,
         proxy: await this.bounded(this.proxyOptions(id), 5000),
         timeout: 20000,
         executablePath: chromium.executablePath(),
@@ -555,15 +557,18 @@ export class Service {
   }
 
   async diagnose(id: string) {
-    const page=this.page(id),expected=this.profile(id).config,observed=await observeFingerprint(page);
+    const page=this.page(id),expected=this.profile(id).config,runtime=this.running.get(id);
+    let observed:Awaited<ReturnType<typeof observeFingerprint>>;
+    try{observed=await this.bounded(observeFingerprint(page),6000);}catch{throw Error('Fingerprint observation failed or timed out; page details withheld');}
+    if(!runtime||this.running.get(id)!==runtime||runtime.closing)throw Error('Fingerprint observation cancelled because the profile stopped');
     const inconsistencies=observedFingerprintIssues(expected,observed,process.platform,linuxManifest.version);
     let policyArgumentObserved:boolean|null=null;
-    const runtime=this.running.get(id)!;
     const identities=ownedProcesses(runtime.launchId,this.directory(id),chromium.executablePath());
     const identity=identities?.find(p=>p.pid===runtime.pid)??identities?.[0];
     if(identity)policyArgumentObserved=/(?:^|[\s"])--force-webrtc-ip-handling-policy=disable_non_proxied_udp(?:$|[\s"])/.test(identity.command);
     if(expected.webrtcPolicy==='disable-non-proxied-udp'&&policyArgumentObserved===false)inconsistencies.push('Configured WebRTC launch argument not observed');
-    const limitations=['Native hardware/graphics/canvas/audio/font/media behavior is measured, not spoofed','Canvas/audio hashes and native details are fingerprint identifiers: keep local diagnostic data private','Local ICE uses no STUN/TURN and records no candidate addresses; public DNS/WebRTC leak protection is not certified','Client hints and permission policies can be unavailable on insecure or restricted origins; unavailable is not a successful verification'];
+    const limitations=['Native hardware/graphics/canvas/audio/font/media behavior is measured, not spoofed','Canvas/audio hashes and native details are fingerprint identifiers: keep local diagnostic data private','Local ICE uses no STUN/TURN and records no candidate addresses; public DNS/WebRTC leak protection is not certified',
+      'The requested UDP policy is not a firewall: Linux loopback STUN still sent UDP with an HTTP proxy; public/Windows STUN behavior remains unverified','Client hints and permission policies can be unavailable on insecure or restricted origins; unavailable is not a successful verification'];
     const result={expected,observed,inconsistencies,capabilities:fingerprintCapabilities,launchPolicy:{requested:expected.webrtcPolicy??'default',nonProxiedUDPArgumentObserved:policyArgumentObserved},limitations,processId:this.running.get(id)?.pid??null};
     this.db.transaction(()=>this.db.run('INSERT INTO diagnostics VALUES(?,?,?,?)',[randomUUID(),id,now(),JSON.stringify(result)]));
     return result;

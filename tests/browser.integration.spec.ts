@@ -27,7 +27,7 @@ test('real automation report includes every action with safe outcomes and screen
 test('startup tabs, homepage, DPR, explicit geolocation and stable relaunch are real browser behavior',async()=>{
  const p=f.service.create({name:'Configured tabs',homepage:origin+'/home',startupUrls:[origin+'/first',origin+'/second'],config:{deviceScaleFactor:1.5,webrtcPolicy:'disable-non-proxied-udp',geolocationPermission:'allow',geolocation:{latitude:-0.3,longitude:36}}});
  const context=await f.service.launch(p.id);expect(context.pages().map(p=>p.url())).toEqual([origin+'/first',origin+'/second']);
- const observed=await f.service.diagnose(p.id);expect(observed.observed.devicePixelRatio).toBe(1.5);expect(observed.observed.geolocationPermission).toBe('granted');expect(observed.inconsistencies).toEqual([]);
+ const observed=await f.service.diagnose(p.id);expect(observed.observed.devicePixelRatio).toBe(1.5);expect(observed.observed.geolocationPermission).toBe('granted');expect(observed.observed.geolocation.status).toBe('observed');expect(observed.observed.geolocation.coordinates).toMatchObject({latitude:-0.3,longitude:36});expect(observed.inconsistencies).toEqual([]);
  const geo=await f.service.page(p.id).evaluate(()=>new Promise<{latitude:number;longitude:number}>((resolve,reject)=>navigator.geolocation.getCurrentPosition(p=>resolve({latitude:p.coords.latitude,longitude:p.coords.longitude}),reject)));
  expect(geo).toEqual({latitude:-0.3,longitude:36});await f.service.home(p.id);expect(f.service.page(p.id).url()).toBe(origin+'/home');
  await f.service.stop(p.id);await f.service.launch(p.id);const again=await f.service.diagnose(p.id);expect(again.observed.devicePixelRatio).toBe(observed.observed.devicePixelRatio);expect(again.expected).toEqual(observed.expected);expect(f.service.profile(p.id).lastUsed).not.toBe(null);
@@ -165,4 +165,28 @@ test('real dead-manager/live-Chromium orphan remains locked and only verified ow
   if(manager.exitCode===null&&manager.signalCode===null){manager.kill('SIGKILL');await dead;}
   const identities=ownedProcesses(launchId,p.directory,executable);if(browserPid&&identities?.some(x=>x.pid===browserPid)){process.kill(browserPid,'SIGTERM');await expect.poll(()=>ownedProcesses(launchId,p.directory,executable),{timeout:15000}).toEqual([]);}
  }
+});
+
+test('proxy authentication rejection never forwards credentials or falls back directly',async()=>{
+ const {httpProxy}=await import('./proxy-fixture');const proxy=await httpProxy(Number(new URL(origin).port),'accepted-user:current-password');let hits=0;const count=()=>hits++;server.on('request',count);
+ try{await f.service.proxySave(undefined,{name:'Expired fixture credentials',protocol:'http',host:'127.0.0.1',port:proxy.port,username:'accepted-user',password:'expired-PRIVATE-password'});const p=f.service.create({name:'Rejected authentication',launchUrl:origin,proxyId:f.service.snapshot().proxies[0]!.id});await expect(f.service.launch(p.id)).rejects.toThrow('launch failed');expect(proxy.stats.challenges).toBeGreaterThan(0);expect(proxy.stats.forwarded).toBe(0);expect(hits).toBe(0);expect(JSON.stringify(f.service.snapshot())).not.toContain('expired-PRIVATE-password');}finally{server.removeListener('request',count);await proxy.close();}
+});
+
+test('SOCKS5 sends a controlled unresolved hostname to the proxy for resolution',async()=>{
+ const {socksProxy}=await import('./proxy-fixture');const alias='proxy-only.invalid',port=Number(new URL(origin).port),proxy=await socksProxy(port,alias);
+ try{await f.service.proxySave(undefined,{name:'Proxy DNS fixture',protocol:'socks5',host:'127.0.0.1',port:proxy.port});const p=f.service.create({name:'Proxy-resolved origin',launchUrl:`http://${alias}:${port}`,proxyId:f.service.snapshot().proxies[0]!.id});await f.service.launch(p.id);expect(await f.service.page(p.id).title()).toBe('Controlled local test');expect(proxy.stats.requestedHosts).toContain(alias);expect(proxy.stats.forwarded).toBeGreaterThan(0);}finally{await f.service.shutdown();await proxy.close();}
+});
+
+test('controlled local STUN records real UDP behavior without claiming public leak protection',async({browserName},testInfo)=>{
+ expect(browserName).toBe('chromium');
+ const {localStun}=await import('./stun-fixture');const observations=[];
+ try{for(const scenario of [{policy:'default',proxy:false},{policy:'disable-non-proxied-udp',proxy:false},{policy:'disable-non-proxied-udp',proxy:true}] as const){const {policy}=scenario,stun=await localStun(),proxy=scenario.proxy?await (await import('./proxy-fixture')).httpProxy(Number(new URL(origin).port)):undefined;try{let proxyId:string|null=null;if(proxy){await f.service.proxySave(undefined,{name:'STUN transport fixture',protocol:'http',host:'127.0.0.1',port:proxy.port});proxyId=f.service.snapshot().proxies[0]!.id;}const p=f.service.create({name:`Local STUN ${policy}`,launchUrl:origin,proxyId,config:{webrtcPolicy:policy}});await f.service.launch(p.id);
+  const result=await f.service.page(p.id).evaluate(async port=>{
+   const peer=new RTCPeerConnection({iceServers:[{urls:`stun:127.0.0.1:${port}`}]}),types=new Set<string>();let finish!:()=>void;let timer:ReturnType<typeof setTimeout>|undefined;
+   try{const done=new Promise<void>(resolve=>{finish=resolve;timer=setTimeout(resolve,2500);});peer.onicecandidate=e=>{if(!e.candidate)finish();else if(e.candidate.type)types.add(e.candidate.type);};peer.createDataChannel('controlled-test');await peer.setLocalDescription(await peer.createOffer());await done;return {candidateTypes:[...types].sort()};}finally{if(timer)clearTimeout(timer);peer.close();}
+  },stun.port);
+  if(policy==='default'){expect(stun.stats.bindingRequests).toBeGreaterThan(0);expect(result.candidateTypes).toContain('srflx');}
+  if(proxy)expect(proxy.stats.forwarded).toBeGreaterThan(0);observations.push({policy,proxyAssigned:scenario.proxy,httpForwardedRequests:proxy?.stats.forwarded??0,udpBindingRequests:stun.stats.bindingRequests,...result,scope:'loopback fixture with TEST-NET mapping, not real public IP/DNS leak certification'});await f.service.stop(p.id);
+ }finally{await stun.close();await proxy?.close();}}fs.writeFileSync(testInfo.outputPath('controlled-local-stun.json'),JSON.stringify(observations,null,2));await testInfo.attach('controlled-local-stun',{body:JSON.stringify(observations,null,2),contentType:'application/json'});
+ }finally{await f.service.shutdown();}
 });

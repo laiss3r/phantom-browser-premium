@@ -16,7 +16,7 @@ export async function observeFingerprint(page:Page) {
    try{const rendered=await Promise.race([audio.startRendering(),new Promise<null>(resolve=>{timer=setTimeout(()=>resolve(null),1500);})]);if(rendered)audioHash=await hash(new Float32Array(rendered.getChannelData(0)).buffer);}finally{if(timer)clearTimeout(timer);}
   }}catch{/* unsupported or blocked audio stays null */}
   const gl=document.createElement('canvas').getContext('webgl'),debug=gl?.getExtension('WEBGL_debug_renderer_info');
-  type Hints={brands:{brand:string;version:string}[];mobile:boolean;platform:string;getHighEntropyValues:(names:string[])=>Promise<{architecture?:string;bitness?:string;platformVersion?:string;fullVersionList?:{brand:string;version:string}[];model?:string;wow64?:boolean}>};
+  type Hints={brands:{brand:string;version:string}[];mobile:boolean;platform:string;getHighEntropyValues:(names:string[])=>Promise<{architecture?:string;bitness?:string;platform?:string;mobile?:boolean;platformVersion?:string;fullVersionList?:{brand:string;version:string}[];model?:string;wow64?:boolean}>};
   const hints=(navigator as Navigator&{userAgentData?:Hints}).userAgentData;
   let highEntropy:Awaited<ReturnType<Hints['getHighEntropyValues']>>|null=null;
   try{if(hints)highEntropy=await hints.getHighEntropyValues(['architecture','bitness','platformVersion','fullVersionList','model','wow64']);}catch{/* permissions policy can withhold hints */}
@@ -33,6 +33,14 @@ export async function observeFingerprint(page:Page) {
    }catch{rtc.status='blocked';}finally{if(timer)clearTimeout(timer);peer?.close();}
   }
   const permissions={geolocation:await permission('geolocation'),camera:await permission('camera'),microphone:await permission('microphone')};
+  // Read only with an already-granted permission: never trigger a permission prompt.
+  const geolocation:{status:string;coordinates:{latitude:number;longitude:number;accuracy:number}|null}={status:permissions.geolocation==='granted'?'unavailable':'not-granted',coordinates:null};
+  if(permissions.geolocation==='granted'&&navigator.geolocation){
+   await new Promise<void>(resolve=>{let finished=false;const timer=setTimeout(()=>{finished=true;geolocation.status='timed-out';resolve();},1500);
+    const finish=(status:string,coordinates:typeof geolocation.coordinates)=>{if(finished)return;finished=true;clearTimeout(timer);geolocation.status=status;geolocation.coordinates=coordinates;resolve();};
+    try{navigator.geolocation.getCurrentPosition(position=>finish('observed',{latitude:position.coords.latitude,longitude:position.coords.longitude,accuracy:position.coords.accuracy}),()=>finish('unavailable',null),{timeout:1200,maximumAge:0});}catch{finish('unavailable',null);}
+   });
+  }
   return {
    userAgent:navigator.userAgent,language:navigator.language,languages:[...navigator.languages],timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,
    viewport:{width:innerWidth,height:innerHeight},screen:{width:screen.width,height:screen.height},devicePixelRatio,
@@ -42,6 +50,7 @@ export async function observeFingerprint(page:Page) {
    webglVendor:gl?.getParameter(gl.VENDOR) as string|null,webglRenderer:gl?.getParameter(gl.RENDERER) as string|null,
    unmaskedWebglVendor:debug?gl?.getParameter(debug.UNMASKED_VENDOR_WEBGL) as string:null,unmaskedWebglRenderer:debug?gl?.getParameter(debug.UNMASKED_RENDERER_WEBGL) as string:null,
    canvas:{status:canvasHash?'measured-native':'unavailable',sha256:canvasHash},audio:{status:audioHash?'measured-native':'unavailable',sha256:audioHash},
+   geolocation,
    fonts:{method:'generic-family metrics only; not installed-font enumeration',metrics:fontMetrics},permissions,geolocationPermission:permissions.geolocation,
    media:{status:mediaStatus,kinds:media,exposedLabels,identities:'omitted'},webRTC:rtc,
    leakChecks:{dns:'not-tested: requires controlled external authoritative DNS',publicIP:'not-tested: use explicit proxy probe',webRTC:'local candidates only; no public STUN/TURN verification'},

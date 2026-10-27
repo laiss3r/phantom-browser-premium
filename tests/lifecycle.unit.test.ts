@@ -126,3 +126,15 @@ it('repeated shutdown is idempotent and reports rejected browser closes without 
 it('a replaced lock owner is retained and reported as recovery required, not idle success',async()=>{
  const {context}=browser(),p=f.service.create({name:'Replacement report'});await f.service.launch(p.id);const file=path.join(p.directory,'.phantom-lock','metadata.json'),meta=JSON.parse(fs.readFileSync(file,'utf8'));meta.launchId=randomUUID();fs.writeFileSync(file,JSON.stringify(meta));await context.close();expect(fs.existsSync(file)).toBe(true);expect(f.service.profile(p.id).lastError).toContain('ownership changed');
 });
+it('reports stopping while close is pending rather than offering a conflicting launch',async()=>{
+ const {context,emitter}=browser(),p=f.service.create({name:'Stopping state'});await f.service.launch(p.id);let finish!:()=>void;
+ context.close.mockImplementation(()=>new Promise<void>(resolve=>{finish=()=>{emitter.emit('close');resolve();};}));const stop=f.service.stop(p.id);
+ try{expect(f.service.profile(p.id).status).toBe('stopping');}finally{finish();await stop;}
+ expect(f.service.profile(p.id).status).toBe('stopped');
+});
+it('production proxy probes explicitly retain Chromium sandboxing',async()=>{
+ const probe={newContext:async()=>({newPage:async()=>({goto:async()=>({ok:()=>true,json:async()=>({ip:'127.0.0.1'})})})}),close:async()=>{}};
+ vi.spyOn(chromium,'launch').mockResolvedValue(probe as unknown as Awaited<ReturnType<typeof chromium.launch>>);
+ await f.service.proxySave(undefined,{name:'Sandbox option unit fixture',protocol:'http',host:'127.0.0.1',port:8080});const production=new Service(f.db,f.root,f.secrets);
+ try{await production.proxyTest(f.service.snapshot().proxies[0]!.id,'http://127.0.0.1');expect(chromium.launch).toHaveBeenCalledWith(expect.objectContaining({headless:true,chromiumSandbox:true}));}finally{await production.shutdown();}
+});

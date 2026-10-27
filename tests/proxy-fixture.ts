@@ -23,8 +23,8 @@ export async function httpProxy(port:number, credentials?:string, tls?:https.Ser
  const lifecycle=sockets(server);await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));
  return {port:(server.address() as net.AddressInfo).port,stats,close:()=>lifecycle.close()};
 }
-export async function socksProxy(allowedPort:number) {
- const stats={forwarded:0};
+export async function socksProxy(allowedPort:number,alias?:string) {
+ const stats={forwarded:0,requestedHosts:[] as string[]};
  const server=net.createServer(socket=>{
   let state:'hello'|'request'|'connecting'='hello',pending=Buffer.alloc(0);
   const onData=(chunk:Buffer)=>{
@@ -39,9 +39,10 @@ export async function socksProxy(allowedPort:number) {
    if(pending.length<length)return;
    const host=kind===1?[...pending.subarray(4,8)].join('.'):kind===3?pending.subarray(5,4+hostLength).toString():'';
    const port=pending.readUInt16BE(4+hostLength);
-   if(pending[0]!==5||pending[1]!==1||host!=='127.0.0.1'||port!==allowedPort){socket.end(Buffer.from([5,2,0,1,0,0,0,0,0,0]));return;}
+   if(pending[0]!==5||pending[1]!==1||(host!=='127.0.0.1'&&host!==alias)||port!==allowedPort){socket.end(Buffer.from([5,2,0,1,0,0,0,0,0,0]));return;}
    const remainder=pending.subarray(length);state='connecting';socket.removeListener('data',onData);socket.pause();
-   const upstream=net.createConnection({host,port},()=>{stats.forwarded++;socket.write(Buffer.from([5,0,0,1,127,0,0,1,0,0]));if(remainder.length)upstream.write(remainder);socket.pipe(upstream);upstream.pipe(socket);socket.resume();});
+   stats.requestedHosts.push(host);
+   const upstream=net.createConnection({host:'127.0.0.1',port},()=>{stats.forwarded++;socket.write(Buffer.from([5,0,0,1,127,0,0,1,0,0]));if(remainder.length)upstream.write(remainder);socket.pipe(upstream);upstream.pipe(socket);socket.resume();});
    lifecycle.track(upstream);upstream.on('error',()=>socket.destroy());socket.on('close',()=>upstream.destroy());
   };socket.on('data',onData);
  });

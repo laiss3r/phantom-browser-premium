@@ -45,3 +45,9 @@ test('guided setup, archive/unarchive and encrypted backup round trip through re
   const restored=(await snapshot()).profiles.find(profile=>profile.id!==p.id)!;expect(restored.description).toBe(p.description);expect(restored.startupUrls).toEqual(p.startupUrls);expect(restored.directory).not.toBe(p.directory);
  }finally{await app.close();fs.rmSync(root,{recursive:true,force:true});}
 });
+
+test('proxy dialog explains invalid hosts and saves canonical IPv6 through validated IPC',async()=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'phantom-proxy-ui-')),app=await electron.launch({args:['.',`--user-data-dir=${root}`,...(process.platform==='linux'?['--no-sandbox']:[])]});
+ try{const page=await app.firstWindow();await page.getByRole('button',{name:'Proxy Manager',exact:true}).click();await page.getByRole('button',{name:/Add proxy/}).first().click();await page.getByLabel('Proxy name',{exact:true}).fill('Controlled IPv6 syntax');await page.getByLabel('Host',{exact:true}).fill('localhost:8080');await page.getByRole('button',{name:'Save proxy',exact:true}).click();await expect(page.getByRole('alert')).toContainText('without a scheme or port');await page.getByLabel('Host',{exact:true}).fill('[::1]');await page.getByRole('button',{name:'Save proxy',exact:true}).click();await expect(page.getByRole('dialog')).not.toBeVisible();const state=await page.evaluate(()=>window.phantom!.request({action:'snapshot'}));expect(state.ok&&state.snapshot.proxies[0]?.host).toBe('::1');await page.getByRole('button',{name:'Fingerprint Diagnostics',exact:true}).click();await expect(page.getByText('Diagnostic only',{exact:true}).first()).toBeVisible();await expect(page.getByText('Unsupported',{exact:true}).first()).toBeVisible();
+ }finally{await app.close();fs.rmSync(root,{recursive:true,force:true});}
+});
