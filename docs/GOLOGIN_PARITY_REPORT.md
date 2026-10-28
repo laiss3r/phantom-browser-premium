@@ -1,3 +1,5 @@
+> **Follow-up:** Country/Location table, offline flags and automatic country selection are corrected in 0.2.0-dev.3. See [current fix/build evidence](COUNTRY_LOCATION_FIX_REPORT.md). The results below remain the historical parity implementation record.
+
 # Core GoLogin-style workflows — implementation report
 
 Date: 2026-10-28. Repository: https://github.com/laiss3r/phantom-browser-premium . Branch: `feat/local-workspaces-v0.2`. Baseline: `fda0ddb`. Implemented source: `3ecdf684e0f2818fe05e6f79f49f566bdf23f0b7`; minimum-window navigation fix and final application source: **`0e4f7fc1e66ab5b98e3b4cfcb48714f3a6b031d0`**. A following documentation-only commit supplies this report and evidence.

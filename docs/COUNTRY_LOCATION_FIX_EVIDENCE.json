@@ -1,0 +1,96 @@
+{
+  "date": "2026-10-28",
+  "repository": "https://github.com/laiss3r/phantom-browser-premium",
+  "branch": "feat/local-workspaces-v0.2",
+  "version": "0.2.0-dev.3",
+  "application_source": "9e80952f91c079fe1f6ad761b5e2bef30c7d0d4b",
+  "ci": {
+    "id": 40707818072,
+    "head": "9e80952f91c079fe1f6ad761b5e2bef30c7d0d4b",
+    "url": "https://github.com/laiss3r/phantom-browser-premium/actions/runs/40707818072",
+    "status": "completed",
+    "conclusion": "success",
+    "jobs": [
+      {
+        "id": 122884584607,
+        "name": "windows-installer",
+        "status": "completed",
+        "conclusion": "success",
+        "active_steps": [],
+        "failed_steps": []
+      },
+      {
+        "id": 122884584836,
+        "name": "linux-checks",
+        "status": "completed",
+        "conclusion": "success",
+        "active_steps": [],
+        "failed_steps": []
+      }
+    ]
+  },
+  "local_linux": {
+    "unit_passed": 165,
+    "unit_files": 18,
+    "browser_passed": 35,
+    "existing_windows_tls_skipped": 1,
+    "desktop_passed": 8,
+    "existing_windows_dpapi_skipped": 1,
+    "typecheck": "passed",
+    "lint": "passed",
+    "build": "passed",
+    "runtime_verified_files": 303
+  },
+  "hosted_windows": {
+    "unit_passed": 161,
+    "existing_linux_only_unit_skipped": 4,
+    "runtime_passed": 12,
+    "browser_passed": 36,
+    "desktop_passed": 9,
+    "installed_exe_passed": 4,
+    "minimum_window_country_flag_in_viewport_without_horizontal_scroll": "passed"
+  },
+  "installer": {
+    "application_source": "9e80952f91c079fe1f6ad761b5e2bef30c7d0d4b",
+    "run_id": 40707818072,
+    "artifact_id": 12825452316,
+    "artifact_url": "https://github.com/laiss3r/phantom-browser-premium/actions/runs/40707818072/artifacts/12825452316",
+    "installer": "Phantom-Browser-Setup-0.2.0-dev.3-x64.exe",
+    "exe_bytes": 297758247,
+    "exe_sha256": "fe9e860dd6d84ed7bfb5b2a11e810ed52b05af7d5138486bcee94b4544803f02",
+    "exe_hash_independently_verified": true,
+    "zip_sha256": "ebe244509ef212dd27d47018a5ab9fe9a087d069f787e5e6891317c531aa8e97",
+    "zip_hash_matches_GitHub_digest": true,
+    "expires_at": "2027-01-26T14:37:44Z",
+    "signature": "not qualified"
+  },
+  "live_paid_webshare": "not tested; credentials/account not supplied",
+  "live_paid_ipapi": "not tested; credentials/subscription not supplied",
+  "manual_windows_10_11_upgrade_uninstall_signature": "not qualified",
+  "controlled_geo": "synthetic DE/US and 8.8.8.8 fixture data; not a real-world location claim",
+  "log_sha256": {
+    "typecheck.log": "814482dc31ba15947af51f727ddeb9647f8fdc35e534854c9005eaafe08b5e8f",
+    "lint.log": "3fa5261011934d56d9b0346f7755a79c3796a4dd4b32c27329e1aa44ecc802ab",
+    "build.log": "d483650d75fb585229d2d3eb7059b4d1e64b76ae6ebb7d040a247d503ca4eabf",
+    "unit.log": "193faaad3c16083ca81b7d3feadfb77b9f7c08a29c927f629ee207a57bf13946",
+    "runtime.log": "63b54140cf0a231b334ed71cbd25c3071e31c6d14d2083fda44bd78f6daa18fa",
+    "provision.log": "f7f43faad3c3508ae4126c92f27dd67e44d55ba4d4c5ea5e2839d60c4e57511f",
+    "browser.log": "7e74a2337cebeda0a8fef9f175ab066d033107707ffe3b1dbbf7e466dbc54b7b",
+    "desktop.log": "93dd48232a44b85649db207b56916204361a213099afd6e006f2fcc19720c838",
+    "minimum-table.log": "2bc2d01f0d435749d6c21630cd1927d67334b41b1c69e92f11759c784de84cf1",
+    "windows-final-job.log": "e2d668d0cd515121a19b851587513bb33278b5444104a8cd034dfe43d490b528",
+    "ci-final.json": "e71c3128b345f3282af7b40a646456147bd771d2b208e8d929d291880be59672",
+    "ci-jobs.json": "20ab7e94a32c8058a22cfb8328dc93711e04c48ef2f4816c51bfa4c54c00fec8",
+    "artifacts.json": "89d88cfb032e7c2081ccabdd5c45dbf9a1748bc9d86fcd7ed127e11ce3e1d5cf",
+    "installer-verification.json": "12a13aee831c5233e6f201794527ae51cea06379f3e9eacc68d34550c25131ba"
+  },
+  "installed_screenshot_sha256": "fd1b92ab96775ef37fc4ea147d80a30cc76f502a5738acba380acff6b6117bc6",
+  "flag_asset_provenance": {
+    "package": "country-flag-icons",
+    "version": "1.6.20",
+    "license": "MIT",
+    "source": "https://github.com/catamphetamine/country-flag-icons",
+    "archive_sha256": "0b003c0984b53e12a870f0b9a2ccd9821c588c505cf18d7938dabec3ae669808",
+    "selection": "Two-letter country/region flags excluding non-geographic XA/XC/XO fixtures; includes XK. Not detected locations without an actual observation."
+  }
+}

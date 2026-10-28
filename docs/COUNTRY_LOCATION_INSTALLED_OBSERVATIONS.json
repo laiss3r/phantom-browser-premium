@@ -1,0 +1,32 @@
+{
+  "version": "0.2.0-dev.3",
+  "source": "actual installed Windows EXE",
+  "geo": "controlled synthetic DE / 8.8.8.8 data through an actual local HTTP proxy, not a live paid provider",
+  "profiles": [
+    {
+      "name": "Verified controlled Germany",
+      "requestedCountry": "DE",
+      "requestedCountryName": "Germany",
+      "proxyId": "543b56bd-3db3-499b-8c4d-bdab3297f27d"
+    },
+    {
+      "name": "Requested France actual Germany",
+      "requestedCountry": "FR",
+      "requestedCountryName": "France",
+      "proxyId": "543b56bd-3db3-499b-8c4d-bdab3297f27d"
+    },
+    {
+      "name": "Explicit direct profile",
+      "requestedCountry": null,
+      "requestedCountryName": null,
+      "proxyId": null
+    },
+    {
+      "name": "Unverified manual label",
+      "requestedCountry": null,
+      "requestedCountryName": null,
+      "proxyId": "21da5ef3-100f-49ee-8b7c-a266aa914e14"
+    }
+  ],
+  "flagsLoaded": true
+}

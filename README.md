@@ -1,12 +1,14 @@
+> **Country flags/location fix — 0.2.0-dev.3:** automatic country proxy assignment, persistent country metadata, visible requested/verified SVG flags and truthful Retry. [Exact new installer, hashes and installed-Windows verification](docs/COUNTRY_LOCATION_FIX_REPORT.md). Old release installers do not contain this fix.
+
 > **Country-based core workflow:** profile creation now defaults to name/location with actual Webshare direct-endpoint selection and proxied IP-country verification. Requires your own provider account; production geolocation requires a subscription key. See [setup](docs/LOCATION_SETUP.md), [audit](docs/GOLOGIN_PARITY_AUDIT.md) and [implementation/results](docs/GOLOGIN_PARITY_REPORT.md). This is workflow parity where supported, **not** native fingerprint/undetectability equivalence.
 
 > **Current development home:** [laiss3r/phantom-browser-premium](https://github.com/laiss3r/phantom-browser-premium). Includes the beginner workflow upgrade and locally bundled premium Inter typography. See [typography and verification](docs/PREMIUM_TYPOGRAPHY.md) and the [beginner guide](docs/BEGINNER_GUIDE.md). This remains an unsigned development project; new Windows CI/manual qualification is tracked separately. The pinned browser still needs a reviewed security-patch update.
 
-> **Unreleased remediation candidate: 0.2.0-dev.2.** New screenshot privacy, durable-write rollback, fingerprint observation and recovery fixes are described in [the remediation report](docs/REMEDIATION_REPORT.md). This import creates no release or tag; the original repository and its releases remain untouched. Published v0.2.0-dev.1 report PNGs may contain fixed-position content outside the old DOM mask: treat old reports as sensitive.
+> **Earlier remediation candidate (historical): 0.2.0-dev.2.** New screenshot privacy, durable-write rollback, fingerprint observation and recovery fixes are described in [the remediation report](docs/REMEDIATION_REPORT.md). This import creates no release or tag; the original repository and its releases remain untouched. Published v0.2.0-dev.1 report PNGs may contain fixed-position content outside the old DOM mask: treat old reports as sensitive.
 
 # Phantom Browser — local Windows browser workspaces
 
-Free, local-first Electron + React + SQLite + Playwright Chromium profile manager. No account, cloud service, paid API or telemetry. **Not a stealth/anonymity product or an independently audited security tool.**
+Free, local-first Electron + React + SQLite + Playwright Chromium profile manager. Direct local profiles require no account, cloud service or paid API; there is no telemetry. Optional country-based proxy routing requires your own provider and production geolocation subscriptions. **Not a stealth/anonymity product or an independently audited security tool.**
 
 **Original repository’s published release (historical):** [v0.1.1 Windows x64 setup](https://github.com/emmanuellaisa00/phantom-browser/releases/download/v0.1.1/Phantom-Browser-Setup-0.1.1-x64.exe), SHA256 `5a6bd724842998cda204b8c7d75e2dc19140bd13d63c9a911fb811cab764cdc8`. The installer is unsigned. v0.1.0 remains untouched.
 
