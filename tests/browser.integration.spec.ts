@@ -1,6 +1,7 @@
 import {test,expect} from '@playwright/test';import http from 'node:http';import fs from 'node:fs';import path from 'node:path';import {fixture} from './helpers';
 let f:Awaited<ReturnType<typeof fixture>>;let server:http.Server;let origin:string;
 test.beforeEach(async()=>{f=await fixture();server=http.createServer((_req,res)=>{if(_req.url==='/sw.js'){res.setHeader('Content-Type','application/javascript');res.end("self.addEventListener('install',()=>self.skipWaiting());self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));self.addEventListener('fetch',e=>{if(new URL(e.request.url).pathname==='/worker-controlled')e.respondWith(new Response('profile-worker-active'));});");return;}
+if(_req.url==='/geo'){res.setHeader('Content-Type','application/json');res.end(JSON.stringify({ip:'8.8.8.8',country_code:'DE',timezone:'Europe/Berlin',languages:'de-DE,en'}));return;}
 if(_req.url==='/headers'){res.setHeader('Content-Type','application/json');res.end(JSON.stringify(_req.headers));return;}
 if(_req.url==='/ip-invalid'){res.setHeader('Content-Type','application/json');res.end('{"ip":"deadbeef"}');return;}
 res.setHeader('Content-Type','text/html');res.end('<!doctype html><title>Controlled local test</title><input id="value"><button id="button" onclick="document.title=\'Clicked\'">Click</button>');});await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));origin=`http://127.0.0.1:${(server.address() as {port:number}).port}`;});
@@ -191,4 +192,22 @@ test('controlled local STUN records real UDP behavior without claiming public le
   if(proxy)expect(proxy.stats.forwarded).toBeGreaterThan(0);observations.push({policy,proxyAssigned:scenario.proxy,httpForwardedRequests:proxy?.stats.forwarded??0,udpBindingRequests:stun.stats.bindingRequests,...result,scope:'loopback fixture with TEST-NET mapping, not real public IP/DNS leak certification'});await f.service.stop(p.id);
  }finally{await stun.close();await proxy?.close();}}fs.writeFileSync(testInfo.outputPath('controlled-local-stun.json'),JSON.stringify(observations,null,2));await testInfo.attach('controlled-local-stun',{body:JSON.stringify(observations,null,2),contentType:'application/json'});
  }finally{await f.service.shutdown();}
+});
+
+test('country creation routes actual Chromium via a provider-selected authenticated proxy and applies observed defaults',async()=>{
+ const {httpProxy}=await import('./proxy-fixture');const proxy=await httpProxy(Number(new URL(origin).port),'location-user:location-password');
+ try{
+  // Mock ONLY the provider inventory; actual Chromium/proxy auth, transport, launch and preferences are real.
+  // /geo is a controlled synthetic location response, not a live third-party IP-geolocation result.
+  await f.service.locations.saveToken('controlled-provider-token');f.service.locations.provider={list:async()=>({endpoints:[{id:'controlled-local',host:'127.0.0.1',port:proxy.port,username:'location-user',password:'location-password',country:'DE'}],truncated:false})};
+  const verify=f.service.locations.verify.bind(f.service.locations);f.service.locations.verify=(id,country)=>verify(id,country,origin+'/geo');
+  const prepared=await f.service.locations.prepare('DE');expect(prepared.connection.state).toBe('connected');expect(proxy.stats.forwarded).toBeGreaterThan(0);expect(proxy.stats.challenges).toBeGreaterThan(0);
+  const p=await f.service.locations.create({name:'Name and country',country:'DE',proxyId:prepared.proxyId,startupUrl:origin+'/localized'});await f.service.launch(p.id);expect(await f.service.page(p.id).evaluate(()=>navigator.language)).toBe('de-DE');expect(await f.service.page(p.id).evaluate(()=>Intl.DateTimeFormat().resolvedOptions().timeZone)).toBe('Europe/Berlin');expect(await f.service.page(p.id).evaluate(()=>devicePixelRatio)).toBe(1);await f.service.page(p.id).evaluate(()=>localStorage.setItem('country-session','keep'));await f.service.stop(p.id);await f.service.launch(p.id);expect(await f.service.page(p.id).evaluate(()=>localStorage.getItem('country-session'))).toBe('keep');await f.service.stop(p.id);
+  await proxy.close();await expect(f.service.launch(p.id)).rejects.toThrow('Connection failed');expect(f.service.running.has(p.id)).toBe(false);expect(f.service.profile(p.id).status).toBe('error');expect(fs.existsSync(p.directory)).toBe(true);
+ }finally{await f.service.shutdown();await proxy.close();}
+});
+
+test('actual proxy authentication rejection is never a country connection success',async()=>{
+ const {httpProxy}=await import('./proxy-fixture');const proxy=await httpProxy(Number(new URL(origin).port),'correct:correct');
+ try{const id=await f.service.proxySave(undefined,{name:'Wrong country credentials',protocol:'http',host:'127.0.0.1',port:proxy.port,username:'wrong',password:'wrong'});const result=await f.service.locations.verify(id,'DE',origin+'/geo');expect(result.state).toBe('authentication-required');expect(result.ip).toBe(null);expect(proxy.stats.challenges).toBeGreaterThan(0);expect(proxy.stats.forwarded).toBe(0);expect(JSON.stringify(f.service.snapshot())).not.toContain('wrong:wrong');}finally{await proxy.close();}
 });

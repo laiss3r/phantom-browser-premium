@@ -1,3 +1,4 @@
+import {LocationWorkflow} from './location-workflow';
 import {parseProxyImport} from '../shared/proxy-import';
 import {proxyHostSchema} from '../shared/schema';
 import fs from 'node:fs';
@@ -5,7 +6,7 @@ import path from 'node:path';
 import {randomUUID, createHash} from 'node:crypto';
 import {isIP} from 'node:net';
 import {gzipSync, gunzipSync} from 'node:zlib';
-import {chromium, type BrowserContext, type Page} from 'playwright';
+import {chromium, type BrowserContext, type Browser, type Page} from 'playwright';
 import {z} from 'zod';
 import {observeFingerprint} from './fingerprint-observation';
 import {fingerprintCapabilities} from '../shared/fingerprint-capabilities';
@@ -74,15 +75,21 @@ const hash = (b: Buffer) => createHash('sha256').update(b).digest('hex');
 const now = () => new Date().toISOString();
 
 export class Service {
+  readonly locations:LocationWorkflow;
+  acceptingUpdates(){return !this.shuttingDown&&!this.closedForUpdates;}
+  assertLocationIdle(id:string){this.assertIdle(id);}
   readonly running = new Map<string, Runtime>();
   readonly jobs = new Map<string, Job>();
   private busy = new Set<string>();
+  private probeSlots=0;
+  private probeBrowsers=new Set<Browser>();
   private logs: Snapshot['logs'] = [];
   private shuttingDown = false;
   private closedForUpdates = false;
   private shutdownWork?: Promise<void>;
 
-  constructor(readonly db: Database, readonly root: string, private secrets: Secrets, private headless = false) {
+  constructor(readonly db: Database, readonly root: string, private secrets: Secrets, private headless = false,readonly production=false) {
+    this.locations=new LocationWorkflow(this,secrets);
     fs.mkdirSync(path.join(root, 'profiles'), {recursive: true});
     fs.mkdirSync(path.join(root, 'reports'), {recursive: true});
     this.recoverOrphans();
@@ -144,7 +151,7 @@ export class Service {
     const id = randomUUID();
     fs.mkdirSync(this.directory(id));
     const p: Profile = {
-      ...v,group:v.group??'', restoreSession:v.restoreSession??false, description:v.description??'', homepage:v.homepage??'', startupUrls:v.startupUrls??[], archivedAt:null, lastUsed:null, id, createdAt: now(), updatedAt: now(), lastLaunch: null,
+      ...v,requestedCountry:v.requestedCountry??null,autoLocation:v.autoLocation??false,group:v.group??'', restoreSession:v.restoreSession??false, description:v.description??'', homepage:v.homepage??'', startupUrls:v.startupUrls??[], archivedAt:null, lastUsed:null, id, createdAt: now(), updatedAt: now(), lastLaunch: null,
       engineVersion: 'Not launched', lastError: null, status: 'stopped',
       directory: this.directory(id),
     };
@@ -352,9 +359,15 @@ export class Service {
   }
 
   private async startBrowser(id: string, p: Profile, r: Runtime): Promise<BrowserContext> {
+    let countryError:string|undefined;
     try {
       this.db.transaction(() => {this.db.run("UPDATE launches SET ended_at=?,outcome='recovered' WHERE profile_id=? AND ended_at IS NULL", [now(), id]); this.db.run('INSERT INTO launches VALUES(?,?,?,NULL,NULL)', [r.launchId, id, now()]);});
       this.verifyBrowserRuntime();
+      if(p.autoLocation&&p.requestedCountry){
+        if(!p.proxyId){countryError='Country-managed profile has no proxy. Reconnect before launching.';throw Error('Country verification failed');}
+        const connection=await this.locations.verify(p.proxyId,p.requestedCountry);
+        if(connection.state!=='connected'){countryError=connection.message;throw Error('Country verification failed');}
+      }
       const proxy = await this.proxyOptions(p.proxyId);
       if (r.closing || this.shuttingDown) throw Error('Launch cancelled');
       r.browserMayExist = true;
@@ -396,9 +409,9 @@ export class Service {
     } catch {
       if (r.context && !r.closed) await this.closeRuntime(id, r).catch(() => {});
       this.finished(id, r, r.closing ? 'cancelled' : 'failed');
-      this.patch(id, {lastError: 'Browser launch failed or was cancelled. Check runtime integrity, storage, proxy and destination availability.'});
+      this.patch(id, {lastError: countryError??'Browser launch failed or was cancelled. Check runtime integrity, storage, proxy and destination availability.'});
       this.log(`Launch failed for profile ${id}`);
-      throw Error('Browser launch failed; see profile error. No credentials were logged.');
+      throw Error(countryError??'Browser launch failed; see profile error. No credentials were logged.');
     }
   }
 
@@ -430,7 +443,7 @@ export class Service {
     this.log(`Profile ${id} ${outcome}`);
   }
 
-  private async bounded<T>(work: Promise<T>, ms: number): Promise<T> {
+  async bounded<T>(work: Promise<T>, ms: number): Promise<T> {
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {return await Promise.race([work, new Promise<never>((_, reject) => {timer = setTimeout(() => reject(Error('Browser operation timed out; lock retained')), ms);})]);}
     finally {if (timer) clearTimeout(timer);}
@@ -472,7 +485,7 @@ export class Service {
   async shutdown() {
     if (this.shutdownWork) return this.shutdownWork;
     this.shuttingDown = true;
-    this.shutdownWork = this.bounded(Promise.allSettled([...this.running.keys()].map(id => this.stop(id))).then(results => {const failed=results.filter(r=>r.status==='rejected').length;if(failed)this.log(`Shutdown incomplete: ${failed} browser close operation(s) failed; uncertain locks retained`);}), 41000).catch(() => {this.log('Shutdown deadline reached; uncertain browser locks retained');}).finally(() => {this.closedForUpdates = true;});
+    this.shutdownWork = this.bounded(Promise.allSettled([...this.running.keys()].map(id => this.stop(id)).concat([...this.probeBrowsers].map(async browser=>{await this.bounded(browser.close(),5000);this.probeBrowsers.delete(browser);}))).then(results => {const failed=results.filter(r=>r.status==='rejected').length;if(failed)this.log(`Shutdown incomplete: ${failed} browser close operation(s) failed; uncertain locks retained`);}), 41000).catch(() => {this.log('Shutdown deadline reached; uncertain browser locks retained');}).finally(() => {this.closedForUpdates = true;});
     return this.shutdownWork;
   }
 
@@ -542,35 +555,48 @@ export class Service {
     this.db.transaction(() => this.db.run('DELETE FROM proxies WHERE id=?', [id]));
   }
 
+  async probeProxyJson(id:string,endpoint:string):Promise<unknown>{
+    if(!this.acceptingUpdates())throw Error('Application is shutting down');
+    if(this.probeSlots>=2)throw Error('Two connection tests are already active. Wait, then retry.');
+    this.probeSlots++;
+    try{return await this.runProxyProbe(id,endpoint);}finally{this.probeSlots--;}
+  }
+  private async runProxyProbe(id:string,endpoint:string):Promise<unknown>{
+    this.verifyBrowserRuntime();
+    const browser=await chromium.launch({headless:true,chromiumSandbox:!this.headless,proxy:await this.bounded(this.proxyOptions(id),5000),timeout:20000,executablePath:chromium.executablePath()});
+    this.probeBrowsers.add(browser);
+    let value:unknown,cleanupFailed=false;
+    try{
+      if(!this.acceptingUpdates())throw Error('Application is shutting down');
+      const context=await browser.newContext({serviceWorkers:'block'}),page=await context.newPage();
+      const expected=new URL(endpoint).href;let authenticationRejected=false;
+      await page.route('**/*',route=>route.request().url()===expected?route.continue():route.abort());
+      const session=await context.newCDPSession(page);await session.send('Network.enable');
+      session.on('Network.responseReceivedExtraInfo',event=>{if(event.statusCode===407)authenticationRejected=true;});
+      page.on('response',response=>{if(response.status()===407)authenticationRejected=true;});
+      let response;
+      try{response=await page.goto(endpoint,{timeout:15000});}catch(e){if(authenticationRejected||e instanceof Error&&/ERR_(INVALID_AUTH_CREDENTIALS|PROXY_AUTH|PROXY_AUTH_REQUESTED)/.test(e.message))throw Error('PROXY_AUTHENTICATION_REQUIRED',{cause:e});throw Error('Proxy connection failed',{cause:e});}
+      if(response?.status()===407)throw Error('PROXY_AUTHENTICATION_REQUIRED');
+      if(!response?.ok())throw Error('Proxy probe HTTP failure');
+      const body=await response.body();if(body.length>65536)throw Error('Proxy probe response too large');
+      value=JSON.parse(body.toString('utf8'));
+    }finally{try{await this.bounded(browser.close(),5000);this.probeBrowsers.delete(browser);}catch{cleanupFailed=true;}}
+    if(cleanupFailed)throw Error('Test browser cleanup could not be confirmed');return value;
+  }
+
   async proxyTest(id: string, endpoint = 'https://api.ipify.org?format=json') {
     const started = performance.now();
-    let context: BrowserContext | undefined;
     let result = 'Connection failed (credentials and raw errors withheld)';
     try {
-      this.verifyBrowserRuntime();
-      const browser = await chromium.launch({
-        headless: true, chromiumSandbox: !this.headless,
-        proxy: await this.bounded(this.proxyOptions(id), 5000),
-        timeout: 20000,
-        executablePath: chromium.executablePath(),
-      });
-      try {
-        context = await browser.newContext();
-        const page = await context.newPage();
-        const response = await page.goto(endpoint, {timeout: 15000});
-        if (!response?.ok()) throw Error();
-        const body = z.object({ip: z.string().refine(value=>isIP(value)!==0,'Invalid IP literal')}).parse(await response.json());
-        result = `Connected — public IP ${body.ip}`;
-      } finally {
-        try {await this.bounded(browser.close(), 5000);} catch {result = 'Test browser cleanup could not be confirmed; sensitive details withheld';}
-      }
+      const body = z.object({ip: z.string().refine(value=>isIP(value)!==0,'Invalid IP literal')}).parse(await this.probeProxyJson(id,endpoint));
+      result = `Connected — public IP ${body.ip}`;
     } catch {
       /* controlled redacted failure */
     }
     const row = this.db.rows('SELECT data FROM proxies WHERE id=?', [id])[0];
     if (!row) throw Error('Proxy not found');
     const p = proxySchema.parse(JSON.parse(String(row.data)));
-    this.db.transaction(() => this.db.run('UPDATE proxies SET data=? WHERE id=?', [JSON.stringify({...p, lastTest: now(), result, latencyMs:Math.round(performance.now()-started)}), id]));
+    this.db.transaction(() => this.db.run('UPDATE proxies SET data=? WHERE id=?', [JSON.stringify({...p,connection:null, lastTest: now(), result, latencyMs:Math.round(performance.now()-started)}), id]));
     return result;
   }
 
@@ -748,7 +774,7 @@ export class Service {
 }
 
 function pickInput(p: Profile) {
-  return {name: p.name,group:p.group, restoreSession:p.restoreSession, description:p.description, homepage:p.homepage, startupUrls:p.startupUrls, notes: p.notes, tags: p.tags, config: p.config, proxyId: p.proxyId, launchUrl: p.launchUrl};
+  return {name: p.name,requestedCountry:p.requestedCountry,autoLocation:p.autoLocation,group:p.group, restoreSession:p.restoreSession, description:p.description, homepage:p.homepage, startupUrls:p.startupUrls, notes: p.notes, tags: p.tags, config: p.config, proxyId: p.proxyId, launchUrl: p.launchUrl};
 }
 
 export function safeArchivePath(name: string) {

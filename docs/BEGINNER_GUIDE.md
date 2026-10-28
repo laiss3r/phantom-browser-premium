@@ -2,9 +2,13 @@
 
 Phantom stores everything locally. No account or subscription is required. A **profile** is a separate browser-data directory: its sign-ins, cookies and site storage do not belong to your other profiles. This is not a promise of anonymity or GoLogin fingerprint equivalence.
 
-## Create → optional proxy → test → launch
+## Short default creation
 
-1. Select **Create profile** on Dashboard or Browser Profiles. A unique suggested name is filled in. Change it if you like; description, tags, notes and a group label are optional. Groups are searchable labels, not movable filesystem folders.
+The ordinary dialog is now **name → country → Connect country → Create/Create and launch**. Configure a real provider account and production geolocation key once in Settings; follow the [country setup guide](LOCATION_SETUP.md). Direct mode is explicit and needs no provider. Optional technical settings are under **Advanced Settings**.
+
+## Full advanced setup (optional)
+
+1. Select **Create profile** on Dashboard or Browser Profiles, expand **Advanced Settings**, then **Open full advanced profile setup**. A unique suggested name is filled in. Change it if you like; description, tags, notes and a group label are optional. Groups are searchable labels, not movable filesystem folders.
 2. **Basics:** optionally set a homepage or up to ten startup URLs, one per line. Restore-session behavior takes priority when an existing session is available. Otherwise startup URLs, then legacy Launch URL, then homepage determine startup.
 3. **Browser preferences:** keep native defaults unless you need a locale/timezone for testing. Expand **Advanced browser settings** for viewport, screen, DPR, color/motion, WebRTC policy, custom UA and explicit geolocation consent. Phantom cannot change your real desktop operating system or native hardware identity. A custom UA must match the bundled Chromium major and desktop OS.
 4. **Proxy connection:** direct connection is valid. Alternatively select an existing proxy or choose **Add a new proxy**, save it, then **Test selected proxy**. Saving alone does not test connectivity. The test performs a real public-IP request; country detection is not implemented.
