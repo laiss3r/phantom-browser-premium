@@ -16,3 +16,6 @@ aside{overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}aside>*{f
 .country-flag{width:22px;height:15px;object-fit:cover;flex:none;border:1px solid #ffffff24;border-radius:2px}
 .profile-location{min-width:200px;max-width:270px;white-space:normal}
 .profile-location small{line-height:1.65}
+/* Keep location beside identity at the supported 1000px minimum window. */
+.profile-table .profile-name>span:last-child{min-width:0;max-width:200px}
+.profile-table .profile-name .profile-link{white-space:normal;text-align:left;overflow-wrap:anywhere}
