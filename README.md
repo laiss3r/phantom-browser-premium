@@ -66,3 +66,7 @@ Provisioning never generates trusted hashes from the current download. Trust pin
 Profiles live under Electron's user-data directory, separate from installation files. Archive does not delete data; delete requires native confirmation; uninstall is configured to retain app data. Browser process crashes and uncertain ownership retain locks rather than killing an arbitrary PID.
 
 **Back up the entire user-data directory while stopped before trying this branch.** v0.1.1 metadata loads with additive defaults, without dropping tables or files. Once the new app saves extended JSON fields, the old strict v0.1.1 application may not read it. App downgrade is **not** automatically safe: use a separate pre-upgrade directory backup. Never run two versions against the same data concurrently. Manual Windows 10/11 install/upgrade/uninstall checks and a valid code signature remain release gates.
+
+## Beginner workflows
+
+Start with the [first-session guide](docs/BEGINNER_GUIDE.md) for the guided wizard, proxy import/test/assignment, profile details, session safety and real desktop screenshots. See [UX verification and limitations](docs/UX_IMPLEMENTATION_REPORT.md) for measured results and delivery status.
