@@ -61,7 +61,14 @@ Existing provider/browser/desktop/security tests remain. A new **strict live
 installed-Windows test** exercises the actual form, automatic Tor download,
 verified Germany, persisted assignment, actual browser launch/public HTTPS and
 zero stored credentials. Its extended timeout is confined to this new live test;
-legacy tests are not relaxed. Final CI/installer evidence follows after execution.
+legacy tests are not relaxed. Current local results: **174 unit cases / 19 files pass; 35 browser cases pass
+(1 Windows-only skip), 8 Electron cases pass (1 Windows DPAPI skip)**;
+typecheck/lint/build pass. Source commit `88d163dc21881fabbbedf6a81b977eb99d9d1fdc`.
+
+**Delivery blocker:** Git push was attempted to the authorized feature branch but
+failed because no GitHub credential is available in this session. No token was
+saved. New Windows CI and exact installed dev.4 qualification therefore remain
+pending; historical dev.3 evidence is not reused. No main/release/tag changes.
 
 ## Sources
 

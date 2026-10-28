@@ -1,3 +1,24 @@
+# Current default: automatic Free Tor (0.2.0-dev.4)
+
+1. Open **Create profile**, enter a name and select a country.
+2. Wait for the first official Tor download and connection verification; this can take a few minutes.
+3. Create only after **Connected**. The requested and verified country flags remain separate.
+
+**No account, subscription, API key or manual proxy configuration is required.**
+Free Tor uses shared public exits; some countries have none and sites/ISPs may block
+Tor. Failure is reported honestly, never replaced with a direct connection. This
+is not Tor Browser or a privacy/leak guarantee. First use downloads about 22 MiB
+on Windows x64 (31 MiB Linux) from Tor Project. Keyless country.is verifies IP
+location. Optional paid settings are under Advanced and are not needed.
+
+See [implementation and evidence](FREE_ROUTING_REPORT.md). New source is locally
+committed; GitHub push authentication and exact new installed-Windows qualification
+are pending. Do not use historical dev.3 installer evidence as proof of dev.4.
+
+---
+
+## Historical paid-provider setup (still optional in Advanced)
+
 # Name + country creation: required setup
 
 This is a real provider-backed workflow, not bundled free proxy traffic. Phantom does not have a Webshare or GoLogin subscription built in. Your GitHub token is **not** a proxy-provider token.

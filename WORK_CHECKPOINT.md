@@ -1,3 +1,19 @@
+# Current checkpoint — zero-account routing, 0.2.0-dev.4
+
+Application source commit: 88d163dc21881fabbbedf6a81b977eb99d9d1fdc.
+Implemented automatic official pinned Tor downloads/country routes and keyless
+real exit verification. Live actual Linux Service + managed Tor + bundled Chromium
+proved Germany, public HTTPS and zero provider keys. 174 unit cases pass;
+browser 35 passed/1 Windows-only skip; Electron 8 passed/1 Windows DPAPI skip.
+Typecheck/lint/build pass. New strict installed-Windows live test is added.
+
+Push attempted to authorized feature branch, failed because GitHub authentication
+is absent (no credential stored, no remote altered). Exact dev.4 Windows installer
+and CI qualification remain pending. No main/release/tag changes. Historical dev.3
+evidence below is not dev.4 evidence. See docs/FREE_ROUTING_REPORT.md.
+
+---
+
 # Master-upgrade checkpoint — 2026-10-27
 
 - Branch feat/local-workspaces-v0.2; local source commits86d58a2/f47161d; exact tested source `9c0e9b33daae58b702f2449e26e8cb71189e44a5`. Package remains unreleased0.2.0-dev.2.

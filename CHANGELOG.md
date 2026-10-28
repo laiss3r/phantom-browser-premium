@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.0-dev.4 — automatic zero-account country routing
+
+- Official pinned on-demand Tor client, strict country exits and real keyless HTTPS IP-country verification; no accounts, secrets or direct fallback.
+- Preserve existing proxy assignments, cookies and optional paid settings; restore local Tor ports after restart.
+- Explicit shared-exit/availability/privacy limitations and truthful connection errors.
+- 174 units, 35 browser cases and 8 Electron cases pass on Linux, plus actual live German Tor + browser HTTPS proof with zero keys.
+- Exact new Windows installer acceptance added, not yet run: GitHub push authentication is unavailable in this session.
+- [Implementation and evidence](docs/FREE_ROUTING_REPORT.md).
+
 ## 0.2.0-dev.3 — country/location correction
 
 - Automatic country-selected provider connection without silent direct fallback.
