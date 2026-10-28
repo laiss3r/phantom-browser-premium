@@ -43,4 +43,4 @@ Removing API keys does not erase existing profiles or encrypted endpoint credent
 
 ## Verified vs unverified
 
-See `GOLOGIN_PARITY_REPORT.md` for exact tests. Unit provider transports and synthetic geolocation fixtures are **not** live provider qualification. Actual controlled Chromium tests exercise authentication, route use, coherent settings, persistence and outage failure. No paid Webshare or ipapi.co account was supplied for a live acceptance test. Windows DPAPI and packaging need exact-commit Windows CI/manual qualification.
+See `GOLOGIN_PARITY_REPORT.md` for exact tests. Unit provider transports and synthetic geolocation fixtures are **not** live provider qualification. Actual controlled Chromium tests exercise authentication, route use, coherent settings, persistence and outage failure. No paid Webshare or ipapi.co account was supplied for a live acceptance test. Windows DPAPI and packaging passed exact-commit hosted CI; manual Windows 10/11 qualification remains outstanding.

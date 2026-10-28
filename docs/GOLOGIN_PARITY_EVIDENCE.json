@@ -1,0 +1,88 @@
+{
+  "date": "2026-10-28",
+  "repository": "https://github.com/laiss3r/phantom-browser-premium",
+  "branch": "feat/local-workspaces-v0.2",
+  "application_source": "0e4f7fc1e66ab5b98e3b4cfcb48714f3a6b031d0",
+  "local_browser_source": "3ecdf684e0f2818fe05e6f79f49f566bdf23f0b7",
+  "browser_backend_identical_to_final": true,
+  "local": {
+    "unit_passed": 151,
+    "unit_files": 17,
+    "browser_passed": 31,
+    "browser_windows_only_skipped": 1,
+    "desktop_passed": 7,
+    "desktop_windows_only_skipped": 1,
+    "typecheck": "passed",
+    "lint": "passed",
+    "build": "passed",
+    "runtime_files_verified": 303
+  },
+  "ci": {
+    "run_id": 40694869651,
+    "head": "0e4f7fc1e66ab5b98e3b4cfcb48714f3a6b031d0",
+    "url": "https://github.com/laiss3r/phantom-browser-premium/actions/runs/40694869651",
+    "status": "completed",
+    "conclusion": "success",
+    "jobs": [
+      {
+        "name": "windows-installer",
+        "status": "completed",
+        "conclusion": "success",
+        "failed_steps": []
+      },
+      {
+        "name": "linux-checks",
+        "status": "completed",
+        "conclusion": "success",
+        "failed_steps": []
+      }
+    ]
+  },
+  "windows": {
+    "unit_passed": 147,
+    "existing_linux_specific_unit_skipped": 4,
+    "runtime_passed": 12,
+    "browser_passed": 32,
+    "desktop_passed": 8,
+    "installed_tests_passed": 3,
+    "installer_build": "passed",
+    "manual_windows_10_11": "not qualified",
+    "signature": "not qualified"
+  },
+  "paid_webshare_live_account": "not supplied / not tested",
+  "paid_ipapi_live_account": "not supplied / not tested",
+  "artifacts": [
+    {
+      "id": 12819920303,
+      "name": "Phantom-Browser-Windows-Setup",
+      "size_in_bytes": 297751301,
+      "digest": "sha256:cc08e09fe02a3e40bb53354b056aba156365c6539f170ba2d48085b5c4c63216",
+      "expired": false,
+      "expires_at": "2027-01-26T13:16:03Z",
+      "archive_download_url": "https://api.github.com/repos/laiss3r/phantom-browser-premium/actions/artifacts/12819920303/zip"
+    },
+    {
+      "id": 12818139960,
+      "name": "Phantom-controlled-installed-diagnostics",
+      "size_in_bytes": 6023,
+      "digest": "sha256:5190c8d6304761aee2ba6a5d6f13c5dce58d1e9e9308d85f8ef6e632720a970a",
+      "expired": false,
+      "expires_at": "2027-01-26T13:16:03Z",
+      "archive_download_url": "https://api.github.com/repos/laiss3r/phantom-browser-premium/actions/artifacts/12818139960/zip"
+    }
+  ],
+  "log_sha256": {
+    "typecheck.log": "c6e72a6f5fb860b3775e60dc9b1ad99f39e372e8f578ae9242f7d91af18f2363",
+    "lint.log": "10d36aa4df9fcd9afd84266201fe9b450e0c2e7d5de700d2b4bcd5cd4a561856",
+    "unit.log": "77ead7b7a56fc3ae3aeee064f40dcf7266134f70fc8a631ccb7e00f26d10aea9",
+    "runtime.log": "a03ad3be49fb0b8330620143ac40ad86fb2d457848c197af519c65e481d66003",
+    "provision.log": "1c3452f55d1f963563ab6939bee7f5a052016669a8b93a2ca66ca3e0c61b80b3",
+    "build.log": "1d414660939126c6c6add539cee830dcb8cd1b220a9b43c46f8b191bfad4116e",
+    "browser.log": "624a58233279df99840c68af88470939cd69a56249f1e8daccf55c69e05d04db",
+    "desktop.log": "6439d9b27f22a96abf9cb45e65ffb6cecbd1289605a974f454b0cc35accc49d3",
+    "minimum-window.log": "8c47a503d42c7a16498f6a97322c56380fd37ce821bf417a8b17df4593ed8a54",
+    "windows-final-job.log": "54b9bde24d101f106da545a5548467ec3a64a1b3cc6f33519d02a40c115f76ac",
+    "ci-retest-jobs.json": "6e8dc0a1bdab456f4d179462eca916475d51954df8f62a8ebd39f9a3c3b5fb2b",
+    "ci-artifacts.json": "bab48e212e1d985e471fda880470f17f015a59cd63e5219d434e4e629d7c2c3c"
+  }
+}
