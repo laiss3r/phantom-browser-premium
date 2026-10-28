@@ -1,0 +1,61 @@
+/* Self-hosted Inter Variable: SIL OFL 1.1, provenance in fonts/PROVENANCE.json.
+   Keep this layer after style.css: one consistent type scale across workspaces. */
+@font-face {
+  font-family: 'Phantom Inter';
+  src: url('./fonts/InterVariable.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+:root {
+  --font-ui: 'Phantom Inter', 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
+  --font-code: 'Cascadia Code', 'SFMono-Regular', Consolas, monospace;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-optical-sizing: auto;
+  font-feature-settings: 'cv11', 'ss01';
+  font-weight: 400;
+  line-height: 1.5;
+  text-rendering: optimizeLegibility;
+}
+button, input, select, textarea { font-family: var(--font-ui); font-size: 12px; line-height: 1.5; }
+button { font-weight: 500; letter-spacing: -.1px; }
+input, select, textarea { font-weight: 400; }
+h1 { font-size: clamp(27px, 2.3vw, 32px); line-height: 1.2; font-weight: 620; letter-spacing: -.9px; text-wrap: balance; }
+h2 { font-size: 15px; line-height: 1.4; font-weight: 600; letter-spacing: -.25px; }
+h3 { font-size: 16px; line-height: 1.4; font-weight: 570; letter-spacing: -.2px; }
+p { line-height: 1.7; }
+.brand { font-weight: 680; letter-spacing: -1.2px; }
+.brand small { font-size: 9px; letter-spacing: 1.65px; font-weight: 550; }
+.workspace small, .aside-bottom p, .version, .breadcrumb, .local-label { font-size: 11px; }
+.nav-label, .eyebrow { font-size: 10px; font-weight: 600; letter-spacing: 1.45px; }
+nav button { font-size: 12px; font-weight: 480; }
+nav button.active { font-weight: 600; }
+nav em { font-size: 10px; font-variant-numeric: tabular-nums; }
+.page-heading p, .welcome-card p, .welcome-card ol { font-size: 13px; }
+.welcome-card h2 { font-size: 24px; font-weight: 600; letter-spacing: -.6px; line-height: 1.3; }
+.metric>div { font-size: 12px; font-weight: 480; }
+.metric>strong { font-size: 34px; font-weight: 570; line-height: 1.4; letter-spacing: -1.2px; font-variant-numeric: tabular-nums; }
+.metric>small { font-size: 10px; line-height: 1.6; }
+th { font-size: 10px; font-weight: 600; letter-spacing: .8px; }
+td { font-size: 12px; line-height: 1.55; font-variant-numeric: tabular-nums; }
+td strong, .profile-link { font-size: 12px; font-weight: 570; letter-spacing: -.1px; }
+td small, .section-heading p { font-size: 10px; line-height: 1.6; }
+.badge { font-size: 10px; font-weight: 500; }
+.actions button { font-size: 11px; }
+label { font-size: 12px; line-height: 1.5; font-weight: 500; }
+label input, label select, label textarea { font-size: 13px; }
+.form-body .muted, .banner, .pagination, .toolbar .muted { font-size: 11px; line-height: 1.65; }
+dl, .form-body dl { font-size: 12px; line-height: 1.65; }
+dt { font-weight: 500; }
+.detail-tabs button, .wizard-steps button, .advanced-settings>summary { font-size: 12px; }
+pre, code, .code-editor, .path-cell small { font-family: var(--font-code); font-feature-settings: normal; font-size: 12px; line-height: 1.7; }
+.shortcuts b, .privacy-note b { font-size: 12px; font-weight: 570; }
+.shortcuts small, .activity, .activity>div, .activity small, .privacy-note p, footer { font-size: 11px; line-height: 1.65; }
+.empty h3 { font-size: 17px; font-weight: 570; }
+.empty p { font-size: 12px; }
+@media (min-width: 1550px) {
+  td { font-size: 13px; }
+  td strong, .profile-link { font-size: 13px; }
+  .metric>small { font-size: 11px; }
+}

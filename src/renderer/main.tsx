@@ -1,6 +1,6 @@
 import {Modal} from './dialog';
 import {ProfileDetails,ProxyImportDialog,AssignmentDialog} from './workflow-components';
-import React,{useEffect,useState} from 'react';import {createRoot} from 'react-dom/client';import {configSchema,profileInput,proxyInput,stepSchema,type Profile,type ProxyRecord,type Request,type Snapshot,type PhantomAPI} from '../shared/schema';import {z} from 'zod';import './style.css';import {fingerprintCapabilities} from '../shared/fingerprint-capabilities';import packageInfo from '../../package.json';
+import React,{useEffect,useState} from 'react';import {createRoot} from 'react-dom/client';import {configSchema,profileInput,proxyInput,stepSchema,type Profile,type ProxyRecord,type Request,type Snapshot,type PhantomAPI} from '../shared/schema';import {z} from 'zod';import './style.css';import './typography.css';import {fingerprintCapabilities} from '../shared/fingerprint-capabilities';import packageInfo from '../../package.json';
 declare global{interface Window{phantom?:PhantomAPI}}
 const pages=['Dashboard','Browser Profiles','Proxy Manager','Fingerprint Diagnostics','Automation','Backups','Logs','Settings'] as const;type Page=typeof pages[number];
 const icons=['◈','▤','⇄','◎','⌘','▣','≡','⚙'];

@@ -11,3 +11,5 @@ const directory = `browser-runtime/chromium-1248/${process.platform === 'win32' 
 const notices = ['LICENSE', 'ABOUT'].filter(name => fs.existsSync(`${directory}/${name}`));
 if (notices.length) console.log('\nBundled browser notices: ' + notices.map(name => `${directory}/${name}`).join(', ') + '. Browser component credits: chrome://credits. This listing is not a full license-compliance audit.');
 else console.log('\nBrowser notices unavailable. Run npm run provision for this platform.');
+
+console.log('Inter Variable — SIL Open Font License 1.1 — self-hosted font; public/licenses/Inter-OFL.txt; pinned provenance: src/renderer/fonts/PROVENANCE.json');

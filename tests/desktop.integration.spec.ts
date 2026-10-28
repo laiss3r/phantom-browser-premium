@@ -65,3 +65,19 @@ test('beginner import preview, shared assignment, details, unassignment and fail
   await page.getByRole('button',{name:'＋ Create profile'}).first().click();await page.getByLabel('Profile name',{exact:true}).fill('Failed launch retains data');await page.getByLabel('Launch URL (legacy, optional)',{exact:true}).fill('https://example.com');await page.getByRole('dialog').getByRole('button',{name:'Next',exact:true}).click();await page.screenshot({path:'docs/ux-browser-wizard.png'});await page.getByRole('dialog').getByRole('button',{name:'Next',exact:true}).click();await page.getByLabel('Proxy assignment',{exact:true}).selectOption(proxy.id);await page.getByRole('dialog').getByRole('button',{name:'Next',exact:true}).click();await page.screenshot({path:'docs/ux-review.png'});await page.getByRole('button',{name:'Create and launch',exact:true}).click();await expect(page.getByRole('dialog')).not.toBeVisible();await expect.poll(async()=>(await snapshot()).profiles.find(v=>v.name==='Failed launch retains data')?.status,{timeout:30000}).toBe('error');const failed=(await snapshot()).profiles.find(v=>v.name==='Failed launch retains data')!;expect(failed.lastError).toBeTruthy();expect(fs.existsSync(failed.directory)).toBe(true);await page.screenshot({path:'docs/ux-launch-error.png'});
  }finally{await app.close();fs.rmSync(root,{recursive:true,force:true});}
 });
+
+test('premium typography loads from the packaged renderer offline and uses stable numeric alignment',async()=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'phantom-type-'));
+ const app=await electron.launch({args:['.',`--user-data-dir=${root}`,...(process.platform==='linux'?['--no-sandbox']:[])]});
+ try{
+  const page=await app.firstWindow();await page.context().setOffline(true);
+  await expect(page.getByRole('heading',{name:'Dashboard',exact:true})).toBeVisible();
+  const typography=await page.evaluate(async()=>{
+   const faces=await document.fonts.load('500 14px "Phantom Inter"');await document.fonts.ready;
+   return {loaded:faces.some(f=>f.status==='loaded'),family:getComputedStyle(document.documentElement).fontFamily,heading:getComputedStyle(document.querySelector('h1')!).fontFamily,numbers:getComputedStyle(document.querySelector('.metric>strong')!).fontVariantNumeric,externalFonts:performance.getEntriesByType('resource').filter(r=>/https?:.*\.(woff2?|ttf)/i.test(r.name)).length};
+  });
+  expect(typography.loaded).toBe(true);expect(typography.family).toContain('Phantom Inter');expect(typography.heading).toContain('Phantom Inter');expect(typography.numbers).toContain('tabular-nums');expect(typography.externalFonts).toBe(0);
+  await page.screenshot({path:'docs/premium-dashboard.png'});
+  await page.getByRole('button',{name:'＋ Create profile'}).first().click();await expect(page.getByLabel('Profile name',{exact:true})).toBeVisible();await page.screenshot({path:'docs/premium-profile-wizard.png'});
+ }finally{await app.close();fs.rmSync(root,{recursive:true,force:true});}
+});
