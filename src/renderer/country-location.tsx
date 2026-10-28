@@ -13,7 +13,7 @@ export function profileConnection(connection:Connection|null|undefined,requested
  if(!connection)return null;
  if(['connected','location-mismatch'].includes(connection.state)&&connection.ip&&connection.country){
   const mismatch=!!requestedCountry&&requestedCountry!==connection.country;
-  return {...connection,requestedCountry,state:mismatch?'location-mismatch':'connected'};
+  return {...connection,requestedCountry,state:mismatch?'location-mismatch':'connected',message:mismatch?`Observed exit ${countryName(connection.country)} (${connection.country}) does not match requested ${countryName(requestedCountry!)} (${requestedCountry}). Retry or replace the endpoint.`:'Latest actual location probe succeeded for this profile. IP location is approximate, not GPS or leak certification.'};
  }
  return {...connection,requestedCountry};
 }
