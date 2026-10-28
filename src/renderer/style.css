@@ -10,3 +10,9 @@
 
 /* Keep every core workflow reachable at the minimum window size and OS scaling. */
 aside{overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}aside>*{flex-shrink:0}
+
+/* Country labels distinguish user intent from actual exit observations. */
+.country-label{display:inline-flex;align-items:center;gap:.35rem;vertical-align:middle;white-space:normal}
+.country-flag{width:22px;height:15px;object-fit:cover;flex:none;border:1px solid #ffffff24;border-radius:2px}
+.profile-location{min-width:200px;max-width:270px;white-space:normal}
+.profile-location small{line-height:1.65}

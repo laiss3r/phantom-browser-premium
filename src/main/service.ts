@@ -1,3 +1,4 @@
+import {countryName} from '../shared/countries';
 import {LocationWorkflow} from './location-workflow';
 import {parseProxyImport} from '../shared/proxy-import';
 import {proxyHostSchema} from '../shared/schema';
@@ -93,6 +94,11 @@ export class Service {
     fs.mkdirSync(path.join(root, 'profiles'), {recursive: true});
     fs.mkdirSync(path.join(root, 'reports'), {recursive: true});
     this.recoverOrphans();
+    // A persisted pending probe belongs to the previous process, not this one.
+    for(const row of this.db.rows('SELECT id,data FROM proxies')){
+      const p=proxySchema.parse(JSON.parse(String(row.data)));
+      if(p.connection?.state==='connecting')this.db.transaction(()=>this.db.run('UPDATE proxies SET data=? WHERE id=?',[JSON.stringify({...p,connection:{...p.connection,state:'connection-failed',ip:null,country:null,timezone:null,locale:null,checkedAt:now(),message:'Previous connection test was interrupted. Retry to verify the route.'}}),String(row.id)]));
+    }
     for (const p of this.profiles()) {
       if (!fs.existsSync(this.directory(p.id))) {
         this.log(`Missing storage directory for profile ${p.id}`);
@@ -151,7 +157,7 @@ export class Service {
     const id = randomUUID();
     fs.mkdirSync(this.directory(id));
     const p: Profile = {
-      ...v,requestedCountry:v.requestedCountry??null,autoLocation:v.autoLocation??false,group:v.group??'', restoreSession:v.restoreSession??false, description:v.description??'', homepage:v.homepage??'', startupUrls:v.startupUrls??[], archivedAt:null, lastUsed:null, id, createdAt: now(), updatedAt: now(), lastLaunch: null,
+      ...v,requestedCountryName:v.requestedCountry?countryName(v.requestedCountry):null,requestedCountry:v.requestedCountry??null,autoLocation:v.autoLocation??false,group:v.group??'', restoreSession:v.restoreSession??false, description:v.description??'', homepage:v.homepage??'', startupUrls:v.startupUrls??[], archivedAt:null, lastUsed:null, id, createdAt: now(), updatedAt: now(), lastLaunch: null,
       engineVersion: 'Not launched', lastError: null, status: 'stopped',
       directory: this.directory(id),
     };
@@ -183,7 +189,8 @@ export class Service {
     if (v.proxyId && !this.db.rows('SELECT id FROM proxies WHERE id=?', [v.proxyId]).length) {
       throw Error('Proxy not found');
     }
-    this.patch(id, v);
+    const country=v.requestedCountry===undefined?this.profile(id).requestedCountry:v.requestedCountry;
+    this.patch(id, {...v,requestedCountry:country,requestedCountryName:country?countryName(country):null});
   }
 
   private assertIdle(id: string, allowLock = false) {
@@ -586,17 +593,18 @@ export class Service {
 
   async proxyTest(id: string, endpoint = 'https://api.ipify.org?format=json') {
     const started = performance.now();
+    let observedIp:string|null=null;
     let result = 'Connection failed (credentials and raw errors withheld)';
     try {
       const body = z.object({ip: z.string().refine(value=>isIP(value)!==0,'Invalid IP literal')}).parse(await this.probeProxyJson(id,endpoint));
-      result = `Connected — public IP ${body.ip}`;
+      observedIp=body.ip;result = `Connected — public IP ${body.ip}`;
     } catch {
       /* controlled redacted failure */
     }
     const row = this.db.rows('SELECT data FROM proxies WHERE id=?', [id])[0];
     if (!row) throw Error('Proxy not found');
     const p = proxySchema.parse(JSON.parse(String(row.data)));
-    this.db.transaction(() => this.db.run('UPDATE proxies SET data=? WHERE id=?', [JSON.stringify({...p,connection:null, lastTest: now(), result, latencyMs:Math.round(performance.now()-started)}), id]));
+    this.db.transaction(() => this.db.run('UPDATE proxies SET data=? WHERE id=?', [JSON.stringify({...p,connection:{state:observedIp?'connected':'connection-failed',requestedCountry:null,ip:observedIp,country:null,timezone:null,locale:null,checkedAt:now(),message:observedIp?'IP connectivity verified. Exit country not verified; run a location test.':result}, lastTest: now(), result, latencyMs:Math.round(performance.now()-started)}), id]));
     return result;
   }
 

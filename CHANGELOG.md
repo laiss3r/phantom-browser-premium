@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0-dev.3 — country/location correction
+
+- Automatic country-selected provider connection without silent direct fallback.
+- Persist requested country code/name and proxy assignment; truthful requested/verified country table with offline SVG flags, public IP, mismatch and Retry.
+- Persist pending verification; recover interrupted checks; preserve meaningful IP-only connectivity states.
+- Built-form, actual Chromium, actual Electron and installed-Windows table regressions. See [fix report](docs/COUNTRY_LOCATION_FIX_REPORT.md).
+
 ## Master-upgrade follow-up — unreleased development, not yet pushed
 
 - Validate/canonicalize proxy hosts and legacy IPv6 formatting; meaningful client-side host errors.

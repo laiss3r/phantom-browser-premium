@@ -1,6 +1,6 @@
 {
   "name": "phantom-browser",
-  "version": "0.2.0-dev.2",
+  "version": "0.2.0-dev.3",
   "private": true,
   "description": "Local-first Chromium profile manager",
   "author": "Phantom Browser contributors",
@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src tests",
     "test": "vitest run",
-    "test:integration": "playwright test tests/browser.integration.spec.ts",
+    "test:integration": "playwright test tests/browser.integration.spec.ts tests/country-creation.integration.spec.ts",
     "build": "npm run typecheck && vite build && node scripts/bundle.mjs",
     "provision": "node scripts/provision.mjs",
     "dist:win": "node scripts/check-windows-package.mjs && npm run build && electron-builder --win nsis --publish never",

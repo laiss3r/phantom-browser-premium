@@ -26,8 +26,8 @@ jobs:
       - run: npm run typecheck && npm run lint && npm test
       - run: npm run test:runtime
       - run: npm run provision && npm run verify:runtime
-      - run: npm run test:integration -- --output=test-results/browser
       - run: npm run build
+      - run: npm run test:integration -- --output=test-results/browser
       - run: xvfb-run -a npm run test:desktop -- --output=test-results/desktop
   windows-installer:
     runs-on: windows-latest
@@ -48,8 +48,8 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run test:runtime
-      - run: npm run test:integration -- --output=test-results/browser
       - run: npm run build
+      - run: npm run test:integration -- --output=test-results/browser
       - run: npm run test:desktop -- --output=test-results/desktop
       - run: npm run dist:win
       - name: Install the actual setup executable and smoke-test the installed application
@@ -84,6 +84,8 @@ jobs:
         with:
           name: Phantom-controlled-installed-diagnostics
           path: |
+            test-results/**/country-table-installed.png
+            test-results/**/country-table-installed.json
             test-results/**/installed-fingerprint.json
             test-results/**/controlled-local-stun.json
             test-results/**/controlled-fingerprint.json

@@ -1,0 +1,8 @@
+{
+  "package": "country-flag-icons",
+  "version": "1.6.20",
+  "license": "MIT",
+  "source": "https://github.com/catamphetamine/country-flag-icons",
+  "archive_sha256": "0b003c0984b53e12a870f0b9a2ccd9821c588c505cf18d7938dabec3ae669808",
+  "selection": "Two-letter country/region flags excluding non-geographic XA/XC/XO fixtures; includes XK. Not detected locations without an actual observation."
+}

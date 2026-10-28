@@ -7,6 +7,7 @@ const observedSchema=z.object({error:z.literal(false).optional(),reserved:z.lite
 export class LocationWorkflow {
  provider:ProxyProvider=new WebshareProvider();
  private preparing=false;
+ private verifying=new Set<string>();
  constructor(private service:Service,private secrets:Secrets){}
  configured(){return this.service.db.rows("SELECT provider FROM provider_secrets WHERE provider='webshare'").length>0;}
  async saveToken(token:string){return this.saveSecret('webshare',token);}
@@ -51,6 +52,12 @@ export class LocationWorkflow {
  }
  async verify(id:string,requestedCountry:string|null,endpoint?:string):Promise<Connection>{
   if(requestedCountry)countrySchema.parse(requestedCountry);
+  if(this.verifying.has(id))throw Error('A location test is already running for this proxy. Wait, then retry.');
+  const initial=this.service.snapshot().proxies.find(p=>p.id===id);if(!initial)throw Error('Proxy not found');
+  this.verifying.add(id);
+  try{
+  const pending:Connection={state:'connecting',requestedCountry,ip:null,country:null,timezone:null,locale:null,checkedAt:new Date().toISOString(),message:'Connecting: checking the assigned proxy and exit location.'};
+  this.service.db.transaction(()=>this.service.db.run('UPDATE proxies SET data=? WHERE id=?',[JSON.stringify({...initial,connection:pending}),id]));
   const started=performance.now();let result:Connection={state:'connection-failed',requestedCountry,ip:null,country:null,timezone:null,locale:null,checkedAt:new Date().toISOString(),message:'Connection failed. Check endpoint availability, proxy credentials and provider traffic, then Retry.'};
   try{
    const data=await this.service.probeProxyJson(id,endpoint??await this.geoUrl());
@@ -66,12 +73,13 @@ export class LocationWorkflow {
   const row=this.service.db.rows('SELECT data FROM proxies WHERE id=?',[id])[0];if(!row)throw Error('Proxy no longer exists');const p=proxySchema.parse(JSON.parse(String(row.data)));
   this.service.db.transaction(()=>this.service.db.run('UPDATE proxies SET data=? WHERE id=?',[JSON.stringify({...p,connection:result,lastTest:result.checkedAt,latencyMs:Math.round(performance.now()-started),result:`${result.state==='connected'?'Connected':result.state} — ${result.ip??'IP unavailable'} · ${result.country??'country unavailable'}`}),id]));
   return result;
+  }finally{this.verifying.delete(id);}
  }
  async create(input:unknown){
   const v=locatedCreateSchema.parse(input);const proxy=this.service.snapshot().proxies.find(p=>p.id===v.proxyId);
   if(!proxy||proxy.country!==v.country||proxy.provider!=='Webshare')throw Error('Connect a provider endpoint for the selected country first.');
   const c=proxy.connection;
-  if(!c||c.state!=='connected'||c.requestedCountry!==v.country||Date.now()-Date.parse(c.checkedAt)>300000)throw Error('Connection is unverified, failed, mismatched or older than five minutes. Retry before creating.');
+  if(!c||c.state!=='connected'||c.requestedCountry!==v.country||c.country!==v.country||!c.ip||Date.now()-Date.parse(c.checkedAt)>300000)throw Error('Connection is unverified, failed, mismatched or older than five minutes. Retry before creating.');
   const config=configSchema.parse({locale:v.locale??c.locale,timezoneId:v.timezoneId??c.timezone,viewport:{width:1280,height:800},screen:{width:1920,height:1080},deviceScaleFactor:1,geolocationPermission:'deny',webrtcPolicy:'default'});
   return this.service.create({name:v.name,requestedCountry:v.country,autoLocation:true,proxyId:v.proxyId,config,...(v.startupUrl?{startupUrls:[v.startupUrl]}:{})});
  }

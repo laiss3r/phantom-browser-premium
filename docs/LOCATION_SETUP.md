@@ -12,8 +12,8 @@ This is a real provider-backed workflow, not bundled free proxy traffic. Phantom
 ## Ordinary creation
 
 1. Click **Create profile**. Accept the generated name or enter one.
-2. Countries load from your configured provider account. Select **Desired country**.
-3. Click **Connect country**. Phantom obtains an endpoint and its credentials through Webshare, stores proxy credentials with DPAPI, and makes a separate actual Chromium request through that proxy to the fixed HTTPS location service.
+2. Select **Desired country** from the offline country/territory list. Provider availability is checked separately; an unavailable provider does not remove country choices or silently choose direct.
+3. Selection automatically connects. **Retry connection / Connect country** can repeat the attempt. Phantom obtains an endpoint and its credentials through Webshare, stores proxy credentials with DPAPI, and makes a separate actual Chromium request through that proxy to the fixed HTTPS location service.
 4. Check the status. **Connected** requires a valid observed IP, country, timezone and language. Requested and observed countries must match before country creation is enabled. An IP-geolocation observation is approximate, not GPS or leak certification. A provider's country label alone does not pass this test.
 5. Click **Create profile** or **Create and launch**. Locale/timezone derive from observed data. Stable supported defaults are viewport 1280×800, screen 1920×1080 and DPR 1. Geolocation permission is denied by default; no GPS coordinates are invented. WebRTC stays at native default, not an unverified privacy setting.
 
@@ -44,3 +44,7 @@ Removing API keys does not erase existing profiles or encrypted endpoint credent
 ## Verified vs unverified
 
 See `GOLOGIN_PARITY_REPORT.md` for exact tests. Unit provider transports and synthetic geolocation fixtures are **not** live provider qualification. Actual controlled Chromium tests exercise authentication, route use, coherent settings, persistence and outage failure. No paid Webshare or ipapi.co account was supplied for a live acceptance test. Windows DPAPI and packaging passed exact-commit hosted CI; manual Windows 10/11 qualification remains outstanding.
+
+## Identifying the fixed installer
+
+Country/Location table and offline SVG flags ship in **0.2.0-dev.3**, setup filename `Phantom-Browser-Setup-0.2.0-dev.3-x64.exe`. Check the app sidebar version after installation. Earlier `0.2.0-dev.2` installs do not contain this fix. Download the exact feature-branch CI artifact identified in [COUNTRY_LOCATION_FIX_REPORT.md](COUNTRY_LOCATION_FIX_REPORT.md), not an older release asset. Existing direct profiles remain direct until you deliberately assign a proxy; Phantom cannot infer a missing country choice retroactively.

@@ -86,3 +86,8 @@ test('installed Electron termination preserves session data and ownership-aware 
   fs.rmSync(root,{recursive:true,force:true});
  }
 });
+
+test('installed Windows country table contains the new build, real persisted proxy observations and offline country flags',async()=>{
+ test.skip(process.platform!=='win32'||!process.env.PHANTOM_INSTALLED_EXE,'Requires installed Windows application');
+ const {checkCountryTable}=await import('./country-table-check');await checkCountryTable(test.info(),process.env.PHANTOM_INSTALLED_EXE);
+});
