@@ -15,3 +15,5 @@ else console.log('\nBrowser notices unavailable. Run npm run provision for this 
 console.log('Inter Variable — SIL Open Font License 1.1 — self-hosted font; public/licenses/Inter-OFL.txt; pinned provenance: src/renderer/fonts/PROVENANCE.json');
 
 console.log('country-flag-icons@1.6.20 — MIT — offline SVG assets; public/licenses/country-flag-icons-MIT.txt; pinned provenance: src/renderer/flags/PROVENANCE.json');
+
+console.log('Free Tor — separate optional official download, not bundled executable redistribution; public/licenses/Free-Tor-NOTICE.txt; original runtime component licenses retained.');

@@ -84,6 +84,8 @@ jobs:
         with:
           name: Phantom-controlled-installed-diagnostics
           path: |
+            test-results/**/free-route-installed.png
+            test-results/**/free-route-installed.json
             test-results/**/country-table-installed.png
             test-results/**/country-table-installed.json
             test-results/**/installed-fingerprint.json

@@ -1,0 +1,41 @@
+{
+  "version": "15.0.26",
+  "tor": "0.4.9.14",
+  "signing_primary_fingerprint": "EF6E286DDA85EA2A4BA7DE684E2C6E8793298290",
+  "platforms": {
+    "linux": {
+      "url": "https://dist.torproject.org/torbrowser/15.0.26/tor-expert-bundle-linux-x86_64-15.0.26.tar.gz",
+      "sha256": "19cf18726eecb362e0f21d27afa9ea9efe5da928bfdfbb1ceb5fe54519e87f4a",
+      "executable": "tor/tor",
+      "files": {
+        "data/geoip": "3099e91a4c8c87a1e6ab8a0b1e7407aea0314a2d8d048d654b4087b9ae103d9f",
+        "data/geoip6": "10f50daba4156a5b1ae782c0db0478b4584901b1ed72cd619cddd4b9f2b03d6a",
+        "docs/conjure.txt": "0522541e3505d6669334f6eb488d4fde9c4af2234daec13170a0cf4d46d99e92",
+        "docs/libevent.txt": "ff02effc9b331edcdac387d198691bfa3e575e7d244ad10cb826aa51ef085670",
+        "docs/lyrebird.txt": "2331e6517a15ce87e2a1d2838c314ca1b8f3c7a347ac28d370a7fccdb5964f40",
+        "docs/openssl.txt": "7d5450cb2d142651b8afa315b5f238efc805dad827d91ba367d8516bc9d49e7a",
+        "docs/tor.txt": "5dc29ea302cc75db6db4a7c88d7b5d4638b4e0f5f1d2e6d21ce71f707470b766",
+        "tor/libcrypto.so.3": "418208c5c738864cb5653f3eeab650debcc71afbe50d08b0bd5a04b20f1d3c05",
+        "tor/libevent-2.1.so.7": "b51ca562ec232785856c454ce4f3621d957f39d0db87919e237590b0331544ff",
+        "tor/libssl.so.3": "9c2438d086d6c299db04b0bc337bbc8c0acd26c19c71eada2173a5b2ef7cecac",
+        "tor/tor": "39c9db0654d2ec218892bd00f75eccb5b641a7222754436c2e4a8d2f764a57d3"
+      }
+    },
+    "win32": {
+      "url": "https://dist.torproject.org/torbrowser/15.0.26/tor-expert-bundle-windows-x86_64-15.0.26.tar.gz",
+      "sha256": "c1988c701de2f24f7d098d1d6d7f507b58f27740d097f29c246e0524d639b252",
+      "executable": "tor/tor.exe",
+      "files": {
+        "data/geoip": "3099e91a4c8c87a1e6ab8a0b1e7407aea0314a2d8d048d654b4087b9ae103d9f",
+        "data/geoip6": "10f50daba4156a5b1ae782c0db0478b4584901b1ed72cd619cddd4b9f2b03d6a",
+        "docs/conjure.txt": "0522541e3505d6669334f6eb488d4fde9c4af2234daec13170a0cf4d46d99e92",
+        "docs/libevent.txt": "ff02effc9b331edcdac387d198691bfa3e575e7d244ad10cb826aa51ef085670",
+        "docs/lyrebird.txt": "2331e6517a15ce87e2a1d2838c314ca1b8f3c7a347ac28d370a7fccdb5964f40",
+        "docs/openssl.txt": "7d5450cb2d142651b8afa315b5f238efc805dad827d91ba367d8516bc9d49e7a",
+        "docs/tor.txt": "5dc29ea302cc75db6db4a7c88d7b5d4638b4e0f5f1d2e6d21ce71f707470b766",
+        "docs/zlib.txt": "e32ff4e00d9d94930537635291da39e7e612703334bf6fde8c7f1686fe8a45a2",
+        "tor/tor.exe": "8c38513b3c4584154158e7c584f4144849dc679a64cd679553d72dad28230c54"
+      }
+    }
+  }
+}

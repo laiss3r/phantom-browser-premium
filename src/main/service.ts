@@ -492,7 +492,7 @@ export class Service {
   async shutdown() {
     if (this.shutdownWork) return this.shutdownWork;
     this.shuttingDown = true;
-    this.shutdownWork = this.bounded(Promise.allSettled([...this.running.keys()].map(id => this.stop(id)).concat([...this.probeBrowsers].map(async browser=>{await this.bounded(browser.close(),5000);this.probeBrowsers.delete(browser);}))).then(results => {const failed=results.filter(r=>r.status==='rejected').length;if(failed)this.log(`Shutdown incomplete: ${failed} browser close operation(s) failed; uncertain locks retained`);}), 41000).catch(() => {this.log('Shutdown deadline reached; uncertain browser locks retained');}).finally(() => {this.closedForUpdates = true;});
+    this.shutdownWork = this.bounded(Promise.allSettled([...this.running.keys()].map(id => this.stop(id)).concat([...this.probeBrowsers].map(async browser=>{await this.bounded(browser.close(),5000);this.probeBrowsers.delete(browser);}))).then(results => {const failed=results.filter(r=>r.status==='rejected').length;if(failed)this.log(`Shutdown incomplete: ${failed} browser close operation(s) failed; uncertain locks retained`);}), 41000).catch(() => {this.log('Shutdown deadline reached; uncertain browser locks retained');}).finally(async () => {await this.locations.close();this.closedForUpdates = true;});
     return this.shutdownWork;
   }
 
@@ -596,6 +596,7 @@ export class Service {
     let observedIp:string|null=null;
     let result = 'Connection failed (credentials and raw errors withheld)';
     try {
+      await this.locations.ensureTorProxy(id);
       const body = z.object({ip: z.string().refine(value=>isIP(value)!==0,'Invalid IP literal')}).parse(await this.probeProxyJson(id,endpoint));
       observedIp=body.ip;result = `Connected — public IP ${body.ip}`;
     } catch {

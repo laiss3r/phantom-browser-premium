@@ -1,6 +1,6 @@
 {
   "name": "phantom-browser",
-  "version": "0.2.0-dev.3",
+  "version": "0.2.0-dev.4",
   "private": true,
   "description": "Local-first Chromium profile manager",
   "author": "Phantom Browser contributors",
@@ -28,6 +28,7 @@
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "sql.js": "1.15.2",
+    "tar": "7.5.22",
     "zod": "4.6.7"
   },
   "devDependencies": {

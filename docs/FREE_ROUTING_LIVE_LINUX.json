@@ -1,0 +1,12 @@
+{
+  "source": "actual Tor 0.4.9.14 + actual bundled Chromium + live country.is, no mocks or account keys",
+  "requested": "DE",
+  "verifiedCountry": "DE",
+  "observedTimezone": "Europe/Berlin",
+  "publicIPPresent": true,
+  "proxyProtocol": "socks5",
+  "provider": "Free Tor",
+  "browserReachedPublicHTTPS": true,
+  "keysStored": 0,
+  "webrtcPolicy": "disable-non-proxied-udp"
+}

@@ -1,0 +1,24 @@
+Phantom optional Free Tor routing
+
+Tor is an independent project, not an endorsement of Phantom. Phantom is not
+Tor Browser. Stock Chromium over SOCKS does not provide Tor Browser's privacy
+properties and may expose identifying information. Shared Tor exits may be
+slow, blocked or unavailable in the selected country. No anonymity, no-leak,
+residential-IP, dedicated-IP or guaranteed-country service is promised.
+
+On first use the application downloads the official unmodified Tor expert
+bundle 15.0.26 (Tor 0.4.9.14) directly from https://dist.torproject.org/.
+Windows x64: about 22 MiB; Linux x64: about 31 MiB. No account/API key is used.
+The installer does not redistribute Tor executable binaries. Archive checksums
+and extracted-file hashes are pinned in the app; modified files are rejected.
+The original license/component notices are retained in network-runtime/docs.
+Tor source: https://dist.torproject.org/tor-0.4.9.14.tar.gz
+Expert bundle/build information: https://download.torproject.org/tor/
+Upstream licenses and source terms apply to the separately downloaded software.
+
+Keyless IP/country lookup: https://country.is/ (https://api.country.is/).
+This external service receives explicit lookup requests through the assigned
+proxy. IP location is approximate, not GPS. Rate limits/outages can cause a
+truthful failed/unavailable connection result. No service credentials are
+embedded in this product. The automatic Tor download reaches Tor Project over
+your normal connection; Tor network usage may be visible to your ISP.
