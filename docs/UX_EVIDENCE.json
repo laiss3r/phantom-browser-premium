@@ -1,0 +1,35 @@
+{
+  "date": "2026-10-28",
+  "branch": "feat/local-workspaces-v0.2",
+  "tested_source": "2ed98f144221cfb73376d33e833c78ce6f4211c6",
+  "browser_tested_source": "0f0ed11",
+  "browser_backend_identical_to_final": true,
+  "unit": {
+    "passed": 120,
+    "files": 15
+  },
+  "browser": {
+    "passed": 29,
+    "skipped_windows_only": 1
+  },
+  "desktop": {
+    "passed": 5,
+    "skipped_windows_only": 1
+  },
+  "typecheck": "passed",
+  "lint": "passed",
+  "build": "passed",
+  "runtime_files_verified": 303,
+  "pushed": false,
+  "windows_ci": "not run; GitHub authentication failed",
+  "remote_feature_head": "6c0029c42bb15da5ca029a5af10a206b583f3662",
+  "logs": {
+    "typecheck-after.log": "c6e72a6f5fb860b3775e60dc9b1ad99f39e372e8f578ae9242f7d91af18f2363",
+    "lint-after.log": "10d36aa4df9fcd9afd84266201fe9b450e0c2e7d5de700d2b4bcd5cd4a561856",
+    "unit-after.log": "a8dac408b187609e209d9fbadd761da5d0677197374bd7d2297dfa9e48d9b532",
+    "browser-after.log": "f930dbaf8494c416ace50f2e9b34f9ba1c2b55446c3f3b61f4824177611b0307",
+    "desktop-after.log": "966135e30bd0c60bab65c6973e4a10797584a2ffcd9145e589597ebef10909b9",
+    "build.log": "98d52161468807e708d63dbc94e630379182e0d29ceb29d8845f85df00b3855a",
+    "push-failure.txt": "8d81745938a4fc8a84fe17e99ba3b9fbbc97088814a649ff3167c97b680ea096"
+  }
+}
