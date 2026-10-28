@@ -1,3 +1,4 @@
+import {parseProxyImport} from '../shared/proxy-import';
 import {proxyHostSchema} from '../shared/schema';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -143,7 +144,7 @@ export class Service {
     const id = randomUUID();
     fs.mkdirSync(this.directory(id));
     const p: Profile = {
-      ...v, restoreSession:v.restoreSession??false, description:v.description??'', homepage:v.homepage??'', startupUrls:v.startupUrls??[], archivedAt:null, lastUsed:null, id, createdAt: now(), updatedAt: now(), lastLaunch: null,
+      ...v,group:v.group??'', restoreSession:v.restoreSession??false, description:v.description??'', homepage:v.homepage??'', startupUrls:v.startupUrls??[], archivedAt:null, lastUsed:null, id, createdAt: now(), updatedAt: now(), lastLaunch: null,
       engineVersion: 'Not launched', lastError: null, status: 'stopped',
       directory: this.directory(id),
     };
@@ -475,7 +476,7 @@ export class Service {
     return this.shutdownWork;
   }
 
-  async proxySave(id: string | undefined, input: unknown) {
+  private async prepareProxySave(id: string | undefined, input: unknown) {
     const p = proxyInput.parse(input);
     const key = id ?? randomUUID();
     const old = id ? this.db.rows('SELECT data,secret FROM proxies WHERE id=?', [id])[0] : undefined;
@@ -498,7 +499,7 @@ export class Service {
     const data = {
       id: key,
       name: p.name,
-      region:p.region??'', latencyMs:null,
+      region:p.region??'', provider:p.provider??'',notes:p.notes??'',latencyMs:null,
       protocol: p.protocol,
       host: p.host,
       port: p.port,
@@ -506,8 +507,33 @@ export class Service {
       lastTest: null,
       result: null,
     };
-    this.db.transaction(() => this.db.run('INSERT OR REPLACE INTO proxies VALUES(?,?,?)', [key, JSON.stringify(data), secret]));
+    return {key,data,secret};
   }
+
+  async proxySave(id:string|undefined,input:unknown){
+    const {key,data,secret}=await this.prepareProxySave(id,input);
+    this.db.transaction(()=>this.db.run('INSERT OR REPLACE INTO proxies VALUES(?,?,?)',[key,JSON.stringify(data),secret]));
+    return key;
+  }
+
+  async importProxies(text:string){
+    const lines=parseProxyImport(text);if(!lines.length)throw Error('Paste at least one proxy');
+    if(lines.some(line=>!line.ok))throw Error('Fix invalid import lines before saving; no proxies were imported');
+    const prepared:Awaited<ReturnType<Service['prepareProxySave']>>[]=[];
+    for(const line of lines)if(line.ok)prepared.push(await this.prepareProxySave(undefined,line.input));
+    if(this.shuttingDown)throw Error('Application is shutting down');
+    this.db.transaction(()=>{for(const {key,data,secret} of prepared)this.db.run('INSERT INTO proxies VALUES(?,?,?)',[key,JSON.stringify(data),secret]);});
+    return {imported:prepared.length};
+  }
+
+  assignProxy(id:string,proxyId:string|null){
+    this.assertIdle(id);
+    if(proxyId&&!this.db.rows('SELECT id FROM proxies WHERE id=?',[proxyId]).length)throw Error('Proxy not found');
+    this.patch(id,{proxyId});
+  }
+
+  async focus(id:string){await this.page(id).bringToFront();}
+
 
   proxyDelete(id: string) {
     if (this.profiles().some(p => p.proxyId === id)) {
@@ -722,7 +748,7 @@ export class Service {
 }
 
 function pickInput(p: Profile) {
-  return {name: p.name, restoreSession:p.restoreSession, description:p.description, homepage:p.homepage, startupUrls:p.startupUrls, notes: p.notes, tags: p.tags, config: p.config, proxyId: p.proxyId, launchUrl: p.launchUrl};
+  return {name: p.name,group:p.group, restoreSession:p.restoreSession, description:p.description, homepage:p.homepage, startupUrls:p.startupUrls, notes: p.notes, tags: p.tags, config: p.config, proxyId: p.proxyId, launchUrl: p.launchUrl};
 }
 
 export function safeArchivePath(name: string) {
