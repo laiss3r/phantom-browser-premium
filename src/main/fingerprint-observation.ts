@@ -6,8 +6,8 @@ export async function observeFingerprint(page:Page) {
   const hash=async(bytes:ArrayBuffer)=>crypto.subtle?[...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(n=>n.toString(16).padStart(2,'0')).join(''):null;
   const permission=async(name:PermissionName)=>navigator.permissions.query({name}).then(p=>p.state).catch(()=>'unavailable');
   const canvas=document.createElement('canvas');canvas.width=240;canvas.height=80;const draw=canvas.getContext('2d');
-  let canvasHash:string|null=null;
-  if(draw){draw.fillStyle='#234567';draw.fillRect(0,0,240,80);draw.fillStyle='#abcdef';draw.font='16px sans-serif';draw.fillText('Phantom native diagnostic 123',4,32);try{canvasHash=await hash(new TextEncoder().encode(canvas.toDataURL()).buffer);}catch{/* restricted API is unavailable, not spoofed */}}
+  let canvasHash:string|null=null,canvasReadback:'allowed'|'blocked'|'error'|'not-tested'='not-tested';
+  if(draw){draw.fillStyle='#234567';draw.fillRect(0,0,240,80);draw.fillStyle='#abcdef';draw.font='16px sans-serif';draw.fillText('Phantom native diagnostic 123',4,32);try{const data=canvas.toDataURL();canvasReadback='allowed';try{canvasHash=await hash(new TextEncoder().encode(data).buffer);}catch{/* hashing unavailable is distinct from readback */}}catch(e){canvasReadback=e instanceof DOMException&&e.name==='SecurityError'?'blocked':'error';}}
   const fontMetrics:Record<string,number>={};if(draw){for(const family of ['serif','sans-serif','monospace']){draw.font=`16px ${family}`;fontMetrics[family]=draw.measureText('mmmmmmmmmmiiiiiiW0123456789').width;}}
   let audioHash:string|null=null;
   try{if(typeof OfflineAudioContext!=='undefined'){
@@ -16,6 +16,9 @@ export async function observeFingerprint(page:Page) {
    try{const rendered=await Promise.race([audio.startRendering(),new Promise<null>(resolve=>{timer=setTimeout(()=>resolve(null),1500);})]);if(rendered)audioHash=await hash(new Float32Array(rendered.getChannelData(0)).buffer);}finally{if(timer)clearTimeout(timer);}
   }}catch{/* unsupported or blocked audio stays null */}
   const gl=document.createElement('canvas').getContext('webgl'),debug=gl?.getExtension('WEBGL_debug_renderer_info');
+  // A single synthetic pixel tests the detached WebGL readback path without storing pixel data.
+  let webglReadPixels:'available'|'unavailable'|'blocked'|'error'|'unexpected-output'='unavailable';
+  if(gl){try{gl.clearColor(1,0,0,1);gl.clear(gl.COLOR_BUFFER_BIT);const pixel=new Uint8Array(4);gl.readPixels(0,0,1,1,gl.RGBA,gl.UNSIGNED_BYTE,pixel);webglReadPixels=gl.getError()!==gl.NO_ERROR?'error':pixel[0]===255&&pixel[1]===0&&pixel[2]===0&&pixel[3]===255?'available':'unexpected-output';}catch(e){webglReadPixels=e instanceof DOMException&&e.name==='SecurityError'?'blocked':'error';}}
   // Presence checks only: do not read extra device identifiers or treat failure as proof of protection.
   let offscreenWebgl:'available'|'unavailable'|'error'='unavailable';
   try{if(typeof OffscreenCanvas!=='undefined')offscreenWebgl=new OffscreenCanvas(2,2).getContext('webgl')?'available':'unavailable';}catch{offscreenWebgl='error';}
@@ -51,9 +54,9 @@ export async function observeFingerprint(page:Page) {
    colorScheme:matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light',reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches,
    hardwareConcurrency:navigator.hardwareConcurrency,deviceMemory:(navigator as Navigator&{deviceMemory?:number}).deviceMemory??null,platform:navigator.platform,
    clientHints:hints?{brands:hints.brands,mobile:hints.mobile,platform:hints.platform}:null,highEntropyClientHints:highEntropy,
-   webglContexts,webglVendor:gl?.getParameter(gl.VENDOR) as string|null,webglRenderer:gl?.getParameter(gl.RENDERER) as string|null,
+   webglContexts,webglReadPixels,webglVendor:gl?.getParameter(gl.VENDOR) as string|null,webglRenderer:gl?.getParameter(gl.RENDERER) as string|null,
    unmaskedWebglVendor:debug?gl?.getParameter(debug.UNMASKED_VENDOR_WEBGL) as string:null,unmaskedWebglRenderer:debug?gl?.getParameter(debug.UNMASKED_RENDERER_WEBGL) as string:null,
-   canvas:{status:canvasHash?'measured-native':'unavailable',sha256:canvasHash},audio:{status:audioHash?'measured-native':'unavailable',sha256:audioHash},
+   canvasReadback,canvas:{status:canvasHash?'measured-native':canvasReadback==='blocked'?'blocked':'unavailable',sha256:canvasHash},audio:{status:audioHash?'measured-native':'unavailable',sha256:audioHash},
    geolocation,
    fonts:{method:'generic-family metrics only; not installed-font enumeration',metrics:fontMetrics},permissions,geolocationPermission:permissions.geolocation,
    media:{status:mediaStatus,kinds:media,exposedLabels,identities:'omitted'},webRTC:rtc,

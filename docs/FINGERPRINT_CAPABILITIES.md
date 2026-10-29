@@ -22,7 +22,8 @@ The official [Playwright BrowserType documentation](https://playwright.dev/docs/
 | Geolocation | Explicit opt-in | Coordinates and allow permission required; denied without configured consent. Native page permission states observed; real geographic/IP matching not automatic. |
 | CPU/memory/platform | Native only | Actual `hardwareConcurrency`, available `deviceMemory`, `navigator.platform` and UA-hints platform observed. No arbitrary per-profile native hardware/OS overrides. |
 | WebGL | Partial experimental HTML-canvas limit | Optional `--disable-webgl` request; observed HTML canvas and OffscreenCanvas availability are reported independently. OffscreenCanvas and workers may still expose WebGL. The diagnostic does not test workers. The limit can break graphics and is not GPU identity control or comprehensive WebGL blocking. Native vendor/renderer is measured when available. |
-| Canvas/audio | Native only | SHA256 of controlled canvas drawing and offline audio samples. Same-environment relaunch stability tested; no randomization or noise injection. Updates/drivers can change outputs. |
+| Canvas | Partial experimental readback restriction | Optional `--disable-reading-from-canvas` request, off by default. Controlled Linux tests exercise 2D readback in pages, a cross-origin frame, OffscreenCanvas and a worker. WebGL `readPixels` and font metrics can still work. This may break sites and is not complete masking. |
+| Audio | Native only | SHA256 of a controlled offline-audio sample. No audio masking or noise injection. Updates/drivers can change outputs. |
 | Client rectangles | Native only | Native DOM layout; no masking or geometry noise. |
 | Do Not Track | Partial | Optional `DNT: 1` request header; native `navigator.doNotTrack` is observed separately. Sites may ignore it; not a privacy guarantee or fingerprint mask. |
 | Plugins | Native only | No per-profile plugin identity or plugin toggle. |

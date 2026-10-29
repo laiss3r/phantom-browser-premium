@@ -142,3 +142,38 @@ Windows DPAPI test skipped. After the full desktop run, the amended guided
 setup test also passed separately, including opt-in persistence and encrypted
 backup restore. No new Windows/installer/worker or physical-GPU qualification
 was run. The prior GitHub Actions failure is not resolved by these Linux results.
+
+## Experimental canvas readback request (2026-10-30)
+
+Profiles can opt in to Chromium's `--disable-reading-from-canvas` launch flag.
+The default is unchanged for existing and new profiles. This is a **partial
+readback restriction**, not a masking engine, not a fabricated identity, not
+noise, and not a guarantee against fingerprinting. It can break canvas exports,
+image editing and other site functionality. Stop, edit and relaunch to change it.
+
+On the pinned Linux/headless Chromium, disposable tests observed SecurityError
+for HTML canvas 2D `getImageData`, `toDataURL`, `toBlob`, OffscreenCanvas 2D
+`getImageData` and `convertToBlob`; they also checked a cross-origin frame and
+a dedicated worker. Native-default profiles and relaunch/revocation were tested
+separately. Existing cookies and local storage survived the change. This is not
+proof that every canvas path or every platform is blocked.
+
+A controlled detached WebGL probe demonstrated the important exception:
+WebGL `readPixels` still returned the red test pixel despite the canvas flag;
+`measureText` also remained available. Diagnostics now report the requested
+policy, launch-argument observation, HTML-canvas readback outcome, and a
+separate WebGL `readPixels` outcome. The synthetic pixel is not saved or
+returned. Blocked, error, not tested and unavailable are not labeled as
+successful comprehensive protection. Service/shared workers, physical GPUs and
+installed Windows are not yet qualified. Audio, font sets, GPU identities,
+CPU/RAM/media identities and the maintained browser-level masking engine are
+still missing. The pinned Chromium security-update gap is still open.
+
+Local follow-up validation: Node 24.22.0, typecheck, lint and production build
+passed (Vite chunk-size warning); 183 unit tests in 20 files passed; separate
+runtime suite 12 passed; real Chromium suite 42 passed with one Windows-only
+skip; Electron/Xvfb suite 8 passed with one Windows DPAPI-only skip. The test
+fixtures use the documented Linux test-only sandbox exceptions. The
+[40959595554](https://github.com/laiss3r/phantom-browser-premium/actions/runs/40959595554)
+CI run for base commit `f4ed4a5` passed both jobs; it is not evidence for this
+canvas change. No Windows installer for this change was built or tested here.

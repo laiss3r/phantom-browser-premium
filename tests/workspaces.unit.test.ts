@@ -56,3 +56,9 @@ it('validates the optional Do Not Track header request without changing legacy d
  expect(configSchema.parse({doNotTrack:'request'}).doNotTrack).toBe('request');
  for(const value of ['1',true,42,'always'])expect(configSchema.safeParse({doNotTrack:value}).success).toBe(false);
 });
+
+it('validates the opt-in experimental canvas readback request and preserves native defaults',()=>{
+ expect(configSchema.parse({}).canvasPolicy).toBeUndefined();
+ expect(configSchema.parse({canvasPolicy:'block-readback'}).canvasPolicy).toBe('block-readback');
+ for(const value of ['mask','noise','block-all',true,42])expect(configSchema.safeParse({canvasPolicy:value}).success).toBe(false);
+});

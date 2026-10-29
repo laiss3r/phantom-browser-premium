@@ -29,3 +29,7 @@ it('the actual Service writes minimized history while returning the unchanged li
   const rows=f.db.rows('SELECT data FROM diagnostics');expect(rows).toHaveLength(1);const stored=JSON.parse(String(rows[0]!.data));expect(stored.observed.canvas.sha256).toBeNull();expect(stored.observed.audio.sha256).toBeNull();expect(stored.observed.geolocation.coordinates).toBeNull();expect(stored.storagePrivacy.scope).toBe('new-local-diagnostic-history-only');
  }finally{vi.restoreAllMocks();f.service.running.clear();await f.cleanup();}
 });
+it('retains readback outcomes and mismatches without retaining canvas hashes',()=>{
+ const result=makeResult();result.observed.canvasReadback='blocked';result.observed.webglReadPixels='available';result.inconsistencies.push('Controlled readback discrepancy');
+ const stored=minimizeDiagnosticHistory(result);expect(stored.observed.canvasReadback).toBe('blocked');expect(stored.observed.webglReadPixels).toBe('available');expect(stored.inconsistencies).toContain('Controlled readback discrepancy');expect(stored.observed.canvas.sha256).toBeNull();expect(result.observed.canvas.sha256).toBe('controlled-canvas-identifier');
+});

@@ -327,7 +327,7 @@ test('native fingerprint surfaces are sampled across page, frame and worker with
  expect(d.observed.webglContexts.worker).toBe('not-tested');
  expect(d.capabilities.find(c=>c.property==='Client rectangles')?.mode).toBe('native-only');
  expect(d.capabilities.find(c=>c.property==='Fonts')?.mode).toBe('partial');
- expect(d.capabilities.find(c=>c.property==='Canvas and audio')?.mode).toBe('native-only');
+ expect(d.capabilities.find(c=>c.property==='Canvas')?.mode).toBe('partial');expect(d.capabilities.find(c=>c.property==='Audio')?.mode).toBe('native-only');
 });
 
 test('Do Not Track header uses the assigned proxy without changing the route',async()=>{
@@ -340,4 +340,35 @@ test('Do Not Track header uses the assigned proxy without changing the route',as
   expect(headers.dnt).toBe('1');expect(proxy.stats.forwarded).toBeGreaterThan(0);expect(f.service.profile(p.id).proxyId).toBe(assigned);
   await f.service.stop(p.id);expect(f.service.profile(p.id).proxyId).toBe(assigned);
  }finally{await f.service.shutdown();await proxy.close();}
+});
+
+test('experimental canvas readback request is profile-local and observable across controlled contexts',async()=>{
+ const native=f.service.create({name:'Canvas native',launchUrl:origin});
+ const limited=f.service.create({name:'Canvas limit',launchUrl:origin,config:{canvasPolicy:'block-readback'}});
+ await f.service.launch(native.id);await f.service.launch(limited.id);
+ const read=async(id:string)=>f.service.page(id).evaluate(async()=>{
+  const run=async(fn:()=>unknown)=>{try{await fn();return 'allowed';}catch(e){return e instanceof DOMException?e.name:'other-error';}};
+  const c=document.createElement('canvas');c.width=2;c.height=2;const ctx=c.getContext('2d')!;ctx.fillStyle='red';ctx.fillRect(0,0,2,2);
+  const o=new OffscreenCanvas(2,2),oc=o.getContext('2d')!;oc.fillStyle='red';oc.fillRect(0,0,2,2);
+  return {getImageData:await run(()=>ctx.getImageData(0,0,1,1)),toDataURL:await run(()=>c.toDataURL()),toBlob:await run(()=>new Promise(resolve=>c.toBlob(resolve))),offscreenPixels:await run(()=>oc.getImageData(0,0,1,1)),offscreenBlob:await run(()=>o.convertToBlob()),fontWidth:ctx.measureText('Native font metric').width};
+ });
+ await f.service.page(limited.id).evaluate(()=>{document.cookie='persist=yes; max-age=3600; path=/';localStorage.setItem('saved','yes');});
+ const original=await read(native.id),restricted=await read(limited.id);
+ for(const name of ['getImageData','toDataURL','toBlob','offscreenPixels','offscreenBlob'] as const){expect(original[name],name).toBe('allowed');expect(restricted[name],name).toBe('SecurityError');}
+ expect(Number.isFinite(restricted.fontWidth)).toBe(true);
+ const page=f.service.page(limited.id);
+ await page.evaluate(src=>new Promise<void>((resolve,reject)=>{const frame=document.createElement('iframe');frame.onload=()=>resolve();frame.onerror=()=>reject(Error('controlled frame unavailable'));frame.src=src;document.body.append(frame);}),origin.replace('127.0.0.1','localhost'));
+ const frame=page.frames().find(frame=>frame.url().startsWith('http://localhost:'));expect(frame).toBeTruthy();
+ expect(await frame!.evaluate(()=>{try{document.createElement('canvas').getContext('2d')!.getImageData(0,0,1,1);return 'allowed';}catch(e){return e instanceof DOMException?e.name:'other-error';}})).toBe('SecurityError');
+ const worker=await page.evaluate(()=>new Promise<{pixels:string;blob:string}>((resolve,reject)=>{
+  const script="onmessage=async()=>{const canvas=new OffscreenCanvas(2,2),ctx=canvas.getContext('2d');let pixels='allowed',blob='allowed';try{ctx.getImageData(0,0,1,1)}catch(e){pixels=e.name}try{await canvas.convertToBlob()}catch(e){blob=e.name}postMessage({pixels,blob});}";
+  const url=URL.createObjectURL(new Blob([script],{type:'text/javascript'})),w=new Worker(url);const timer=setTimeout(()=>{w.terminate();URL.revokeObjectURL(url);reject(Error('controlled worker timed out'));},5000);
+  w.onmessage=e=>{clearTimeout(timer);w.terminate();URL.revokeObjectURL(url);resolve(e.data);};w.onerror=()=>{clearTimeout(timer);w.terminate();URL.revokeObjectURL(url);reject(Error('controlled worker failed'));};w.postMessage(null);
+ }));
+ expect(worker).toEqual({pixels:'SecurityError',blob:'SecurityError'});
+ const d=await f.service.diagnose(limited.id);expect(d.launchPolicy.canvasRequested).toBe('block-readback');expect(d.launchPolicy.canvasArgumentObserved).toBe(true);expect(d.observed.canvasReadback).toBe('blocked');expect(d.observed.canvas.status).toBe('blocked');expect(d.observed.canvas.sha256).toBeNull();expect(d.limitations.join(' ')).toContain('WebGL readPixels');
+ const independentWebgl=await page.evaluate(()=>{const gl=document.createElement('canvas').getContext('webgl');if(!gl)return 'unavailable';try{gl.clearColor(1,0,0,1);gl.clear(gl.COLOR_BUFFER_BIT);const pixel=new Uint8Array(4);gl.readPixels(0,0,1,1,gl.RGBA,gl.UNSIGNED_BYTE,pixel);return gl.getError()!==gl.NO_ERROR?'error':pixel[0]===255&&pixel[1]===0&&pixel[2]===0&&pixel[3]===255?'available':'unexpected-output';}catch(e){return e instanceof DOMException&&e.name==='SecurityError'?'blocked':'error';}});expect(d.observed.webglReadPixels).toBe(independentWebgl);
+ await f.service.stop(limited.id);await f.service.launch(limited.id);expect((await read(limited.id)).getImageData).toBe('SecurityError');
+ const unchanged=await f.service.diagnose(native.id);expect(unchanged.launchPolicy.canvasRequested).toBe('default');expect(unchanged.launchPolicy.canvasArgumentObserved).toBe(false);expect(unchanged.observed.canvasReadback).toBe('allowed');
+ await f.service.stop(limited.id);f.service.edit(limited.id,{name:'Canvas limit',launchUrl:origin,config:{canvasPolicy:'default'}});await f.service.launch(limited.id);expect((await read(limited.id)).getImageData).toBe('allowed');expect(await f.service.page(limited.id).evaluate(()=>({cookie:document.cookie,storage:localStorage.getItem('saved')}))).toEqual({cookie:'persist=yes',storage:'yes'});
 });

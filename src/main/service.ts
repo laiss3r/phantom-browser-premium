@@ -384,7 +384,7 @@ export class Service {
         headless: this.headless, chromiumSandbox: !this.headless,
         ignoreDefaultArgs: ['--password-store=basic', '--use-mock-keychain'],
         proxy, ...this.options(p.config), acceptDownloads: false, timeout: 30000,
-        executablePath: chromium.executablePath(), args: [`--phantom-launch-id=${r.launchId}`, ...(p.restoreSession?['--restore-last-session']:[]), ...(p.config.webrtcPolicy === 'disable-non-proxied-udp' ? ['--force-webrtc-ip-handling-policy=disable_non_proxied_udp'] : []), ...(p.config.webglPolicy === 'limit-html-canvas' ? ['--disable-webgl'] : [])],
+        executablePath: chromium.executablePath(), args: [`--phantom-launch-id=${r.launchId}`, ...(p.restoreSession?['--restore-last-session']:[]), ...(p.config.webrtcPolicy === 'disable-non-proxied-udp' ? ['--force-webrtc-ip-handling-policy=disable_non_proxied_udp'] : []), ...(p.config.webglPolicy === 'limit-html-canvas' ? ['--disable-webgl'] : []), ...(p.config.canvasPolicy === 'block-readback' ? ['--disable-reading-from-canvas'] : [])],
       });
       r.context = context;
       context.on('close', () => {r.closed = true; r.settling = this.settleExit(id, r, r.closing ? 'stopped' : 'closed'); void r.settling.catch(() => {});});
@@ -625,16 +625,18 @@ export class Service {
     try{observed=await this.bounded(observeFingerprint(page),6000);}catch{throw Error('Fingerprint observation failed or timed out; page details withheld');}
     if(!runtime||this.running.get(id)!==runtime||runtime.closing)throw Error('Fingerprint observation cancelled because the profile stopped');
     const inconsistencies=observedFingerprintIssues(expected,observed,process.platform,linuxManifest.version);
-    let policyArgumentObserved:boolean|null=null,webglArgumentObserved:boolean|null=null;
+    let policyArgumentObserved:boolean|null=null,webglArgumentObserved:boolean|null=null,canvasArgumentObserved:boolean|null=null;
     const identities=ownedProcesses(runtime.launchId,this.directory(id),chromium.executablePath());
     const identity=identities?.find(p=>p.pid===runtime.pid)??identities?.[0];
-    if(identity){policyArgumentObserved=/(?:^|[\s"])--force-webrtc-ip-handling-policy=disable_non_proxied_udp(?:$|[\s"])/.test(identity.command);webglArgumentObserved=/(?:^|[\s"])--disable-webgl(?:$|[\s"])/.test(identity.command);}
+    if(identity){policyArgumentObserved=/(?:^|[\s"])--force-webrtc-ip-handling-policy=disable_non_proxied_udp(?:$|[\s"])/.test(identity.command);webglArgumentObserved=/(?:^|[\s"])--disable-webgl(?:$|[\s"])/.test(identity.command);canvasArgumentObserved=/(?:^|[\s"])--disable-reading-from-canvas(?:$|[\s"])/.test(identity.command);}
     if(expected.webrtcPolicy==='disable-non-proxied-udp'&&policyArgumentObserved===false)inconsistencies.push('Configured WebRTC launch argument not observed');
     if(expected.webglPolicy==='limit-html-canvas'&&webglArgumentObserved===false)inconsistencies.push('Configured WebGL launch argument not observed');
     if(expected.webglPolicy==='limit-html-canvas'&&observed.webglContexts.htmlCanvas==='available')inconsistencies.push('WebGL still available on diagnostic HTML canvas despite requested limit');
-    const limitations=['Native hardware/graphics/canvas/audio/font/media behavior is measured, not spoofed; the optional WebGL limit is partial, not identity masking','Canvas/audio hashes and native details are fingerprint identifiers: keep local diagnostic data private','Local ICE uses no STUN/TURN and records no candidate addresses; public DNS/WebRTC leak protection is not certified',
-      'The requested UDP policy is not a firewall: Linux loopback STUN still sent UDP with an HTTP proxy; public/Windows STUN behavior remains unverified','HTML-canvas WebGL limit is experimental; OffscreenCanvas and workers may still expose WebGL. Context checks do not prove fingerprint protection', 'Do Not Track is a request header, not a guarantee that sites honor it; the JavaScript property is measured separately and the header is not verified by diagnostics', 'Client hints and permission policies can be unavailable on insecure or restricted origins; unavailable is not a successful verification'];
-    const result={expected,observed,inconsistencies,capabilities:fingerprintCapabilities,launchPolicy:{requested:expected.webrtcPolicy??'default',nonProxiedUDPArgumentObserved:policyArgumentObserved,webglRequested:expected.webglPolicy??'default',webglArgumentObserved},limitations,processId:this.running.get(id)?.pid??null};
+    if(expected.canvasPolicy==='block-readback'&&canvasArgumentObserved===false)inconsistencies.push('Configured canvas readback launch argument not observed');
+    if(expected.canvasPolicy==='block-readback'&&observed.canvasReadback==='allowed')inconsistencies.push('Diagnostic canvas readback was allowed despite requested restriction');
+    const limitations=['Hardware, graphics, canvas, audio, font and media identities are native, not spoofed; optional canvas/WebGL restrictions are partial','Canvas/audio hashes and native details are fingerprint identifiers: keep local diagnostic data private','Local ICE uses no STUN/TURN and records no candidate addresses; public DNS/WebRTC leak protection is not certified',
+      'The requested UDP policy is not a firewall: Linux loopback STUN still sent UDP with an HTTP proxy; public/Windows STUN behavior remains unverified','HTML-canvas WebGL limit is experimental; OffscreenCanvas and workers may still expose WebGL. Context checks do not prove fingerprint protection', 'Canvas readback limit is experimental and may break sites; WebGL readPixels, font metrics and other fingerprinting paths may remain available', 'Do Not Track is a request header, not a guarantee that sites honor it; the JavaScript property is measured separately and the header is not verified by diagnostics', 'Client hints and permission policies can be unavailable on insecure or restricted origins; unavailable is not a successful verification'];
+    const result={expected,observed,inconsistencies,capabilities:fingerprintCapabilities,launchPolicy:{requested:expected.webrtcPolicy??'default',nonProxiedUDPArgumentObserved:policyArgumentObserved,webglRequested:expected.webglPolicy??'default',webglArgumentObserved,canvasRequested:expected.canvasPolicy??'default',canvasArgumentObserved},limitations,processId:this.running.get(id)?.pid??null};
     this.db.transaction(()=>this.db.run('INSERT INTO diagnostics VALUES(?,?,?,?)',[randomUUID(),id,now(),JSON.stringify(minimizeDiagnosticHistory(result))]));
     return result;
   }

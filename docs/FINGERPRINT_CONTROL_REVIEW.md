@@ -14,7 +14,7 @@ as a vendor statement, not as independent proof of how its implementation works.
 
 | Surface | This follow-up | Remaining gap / validation needed |
 |---|---|---|
-| Canvas | Existing native diagnostic; controlled page and worker 2D context availability tested | No masking or complete canvas blocking. Engine-level designs need all readback paths, offscreen, workers, frame behavior, compatibility and security tests. |
+| Canvas | Optional experimental native `--disable-reading-from-canvas` request; controlled Linux tests cover specific HTML/Offscreen 2D readbacks in page, cross-origin frame and dedicated worker | No complete masking. `WebGLRenderingContext.readPixels` and font measurements remained available locally; other paths and Windows/GPU behavior need qualification. |
 | Audio | Existing offline-audio sample/status; native availability compared on controlled page | No audio identity or masking control. Test native rendering and worker/platform coverage for any future engine. |
 | WebGL image and GPU identity | Existing opt-in experimental HTML-canvas limit and truthful OffscreenCanvas observation | No image or vendor/renderer control; worker and OffscreenCanvas paths are not comprehensively blocked. Real GPU and Windows coverage required. |
 | Fonts | Existing generic-family metrics, with a controlled page measurement | No configurable font inventory/set. A browser-level implementation needs OS fallback, local fonts, downloadable fonts, CSS/canvas/worker consistency and licensing tests. |
