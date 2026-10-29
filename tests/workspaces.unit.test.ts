@@ -50,3 +50,9 @@ it('accepts only the explicit experimental WebGL policy and leaves legacy profil
  expect(configSchema.parse({webglPolicy:'limit-html-canvas'}).webglPolicy).toBe('limit-html-canvas');
  for(const value of ['spoof','disable-all',true,42])expect(configSchema.safeParse({webglPolicy:value}).success).toBe(false);
 });
+
+it('validates the optional Do Not Track header request without changing legacy defaults',()=>{
+ expect(configSchema.parse({}).doNotTrack).toBeUndefined();
+ expect(configSchema.parse({doNotTrack:'request'}).doNotTrack).toBe('request');
+ for(const value of ['1',true,42,'always'])expect(configSchema.safeParse({doNotTrack:value}).success).toBe(false);
+});

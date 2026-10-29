@@ -59,7 +59,7 @@ export async function observeFingerprint(page:Page) {
    media:{status:mediaStatus,kinds:media,exposedLabels,identities:'omitted'},webRTC:rtc,
    leakChecks:{dns:'not-tested: requires controlled external authoritative DNS',publicIP:'not-tested: use explicit proxy probe',webRTC:'local candidates only; no public STUN/TURN verification'},
    capabilities:{canvas:!!draw,audio:typeof OfflineAudioContext!=='undefined',webRTC:typeof RTCPeerConnection!=='undefined',mediaEnumeration:!!navigator.mediaDevices?.enumerateDevices,serviceWorker:'serviceWorker' in navigator,cacheStorage:'caches' in globalThis,indexedDB:'indexedDB' in globalThis},
-   webdriver:navigator.webdriver,secureContext:isSecureContext,
+   doNotTrack:navigator.doNotTrack ?? null,webdriver:navigator.webdriver,secureContext:isSecureContext,
   };
  });
 }

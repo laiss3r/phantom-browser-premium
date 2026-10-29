@@ -23,6 +23,9 @@ The official [Playwright BrowserType documentation](https://playwright.dev/docs/
 | CPU/memory/platform | Native only | Actual `hardwareConcurrency`, available `deviceMemory`, `navigator.platform` and UA-hints platform observed. No arbitrary per-profile native hardware/OS overrides. |
 | WebGL | Partial experimental HTML-canvas limit | Optional `--disable-webgl` request; observed HTML canvas and OffscreenCanvas availability are reported independently. OffscreenCanvas and workers may still expose WebGL. The diagnostic does not test workers. The limit can break graphics and is not GPU identity control or comprehensive WebGL blocking. Native vendor/renderer is measured when available. |
 | Canvas/audio | Native only | SHA256 of controlled canvas drawing and offline audio samples. Same-environment relaunch stability tested; no randomization or noise injection. Updates/drivers can change outputs. |
+| Client rectangles | Native only | Native DOM layout; no masking or geometry noise. |
+| Do Not Track | Partial | Optional `DNT: 1` request header; native `navigator.doNotTrack` is observed separately. Sites may ignore it; not a privacy guarantee or fingerprint mask. |
+| Plugins | Native only | No per-profile plugin identity or plugin toggle. |
 | Fonts | Partial diagnostic | Generic serif/sans-serif/monospace metrics; not installed-font enumeration. Do not mistake `document.fonts.check` or metrics for a complete font inventory. No spoofed font set. |
 | WebRTC | Partial | Optional Chromium non-proxied-UDP launch policy; argument observed through verified OS ownership scan. Local ICE type/protocol summary uses no STUN/TURN and stores no candidate addresses. Not public-IP leak certification. |
 | Media/permissions | Native only | Camera/microphone/geolocation permission states and device-kind counts; no media acquisition, device labels or IDs. No media identity rewriting. |
@@ -36,3 +39,5 @@ Run **Fingerprint Diagnostics** against a running profile on an origin you contr
 Diagnostics do not call a third-party fingerprint service. They create detached controlled canvas/audio samples, enumerate device **kinds/counts only**, measure generic-font metrics and gather local ICE without external STUN/TURN. Hardware/graphics details and stable hashes are themselves fingerprint identifiers; protect the local app-data/diagnostic database. Public CI artifacts contain only explicit synthetic-profile observations from disposable CI machines, never user profiles.
 
 Automated coverage includes native samples/headers/relaunch, capability boundaries and the **actual installed Windows EXE plus bundled browser**, with a machine-readable controlled diagnostic artifact. See the current remediation report for actual run status; configuring a test is not evidence that it passed.
+
+See [fingerprint-control follow-up](FINGERPRINT_CONTROL_REVIEW.md) for the current gap matrix and test scope.

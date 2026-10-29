@@ -432,6 +432,7 @@ export class Service {
       timezoneId: c.timezoneId,
       colorScheme: c.colorScheme,
       reducedMotion: c.reducedMotion,
+      extraHTTPHeaders: c.doNotTrack === 'request' ? {'DNT':'1'} : undefined,
       userAgent: c.userAgent,
       geolocation: c.geolocation,
       permissions: c.geolocation && c.geolocationPermission === 'allow' ? ['geolocation'] : [],
@@ -632,7 +633,7 @@ export class Service {
     if(expected.webglPolicy==='limit-html-canvas'&&webglArgumentObserved===false)inconsistencies.push('Configured WebGL launch argument not observed');
     if(expected.webglPolicy==='limit-html-canvas'&&observed.webglContexts.htmlCanvas==='available')inconsistencies.push('WebGL still available on diagnostic HTML canvas despite requested limit');
     const limitations=['Native hardware/graphics/canvas/audio/font/media behavior is measured, not spoofed; the optional WebGL limit is partial, not identity masking','Canvas/audio hashes and native details are fingerprint identifiers: keep local diagnostic data private','Local ICE uses no STUN/TURN and records no candidate addresses; public DNS/WebRTC leak protection is not certified',
-      'The requested UDP policy is not a firewall: Linux loopback STUN still sent UDP with an HTTP proxy; public/Windows STUN behavior remains unverified','HTML-canvas WebGL limit is experimental; OffscreenCanvas and workers may still expose WebGL. Context checks do not prove fingerprint protection', 'Client hints and permission policies can be unavailable on insecure or restricted origins; unavailable is not a successful verification'];
+      'The requested UDP policy is not a firewall: Linux loopback STUN still sent UDP with an HTTP proxy; public/Windows STUN behavior remains unverified','HTML-canvas WebGL limit is experimental; OffscreenCanvas and workers may still expose WebGL. Context checks do not prove fingerprint protection', 'Do Not Track is a request header, not a guarantee that sites honor it; the JavaScript property is measured separately and the header is not verified by diagnostics', 'Client hints and permission policies can be unavailable on insecure or restricted origins; unavailable is not a successful verification'];
     const result={expected,observed,inconsistencies,capabilities:fingerprintCapabilities,launchPolicy:{requested:expected.webrtcPolicy??'default',nonProxiedUDPArgumentObserved:policyArgumentObserved,webglRequested:expected.webglPolicy??'default',webglArgumentObserved},limitations,processId:this.running.get(id)?.pid??null};
     this.db.transaction(()=>this.db.run('INSERT INTO diagnostics VALUES(?,?,?,?)',[randomUUID(),id,now(),JSON.stringify(minimizeDiagnosticHistory(result))]));
     return result;

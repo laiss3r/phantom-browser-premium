@@ -280,3 +280,64 @@ test('experimental WebGL request is profile-local, observable and honest about O
  expect(f.service.profile(standard.id).config.webglPolicy).toBeUndefined();
  const native=await f.service.diagnose(standard.id);expect(native.launchPolicy.webglRequested).toBe('default');expect(native.launchPolicy.webglArgumentObserved).toBe(false);
 });
+
+test('Do Not Track is a profile-local HTTP request, not a simulated JavaScript property',async()=>{
+ const a=f.service.create({name:'DNT requested',launchUrl:origin+'/headers',config:{doNotTrack:'request'}});
+ const b=f.service.create({name:'Native DNT',launchUrl:origin+'/headers'});
+ await f.service.launch(a.id);await f.service.launch(b.id);
+ const headers=async(id:string)=>f.service.page(id).evaluate(()=>fetch('/headers').then(r=>r.json()) as Promise<Record<string,string>>);
+ const initial=JSON.parse((await f.service.page(a.id).textContent('body'))!) as Record<string,string>;
+ expect(initial.dnt).toBe('1');expect((await headers(a.id)).dnt).toBe('1');expect((await headers(b.id)).dnt).toBeUndefined();
+ const observed=await f.service.diagnose(a.id);const actual=await f.service.page(a.id).evaluate(()=>navigator.doNotTrack ?? null);
+ expect(observed.expected.doNotTrack).toBe('request');expect(observed.observed.doNotTrack).toBe(actual);
+ expect(observed.limitations.join(' ')).toContain('header is not verified by diagnostics');
+ await f.service.page(a.id).evaluate(()=>{document.cookie='keep=private; max-age=3600; path=/';localStorage.setItem('keep','present');});
+ await f.service.stop(a.id);await f.service.launch(a.id);expect((await headers(a.id)).dnt).toBe('1');
+ await f.service.stop(a.id);f.service.edit(a.id,{name:'DNT requested',launchUrl:origin+'/headers',config:{doNotTrack:'default'}});
+ await f.service.launch(a.id);expect((await headers(a.id)).dnt).toBeUndefined();
+ expect(await f.service.page(a.id).evaluate(()=>({cookie:document.cookie,storage:localStorage.getItem('keep')}))).toEqual({cookie:'keep=private',storage:'present'});
+ expect((await headers(b.id)).dnt).toBeUndefined();
+});
+
+test('native fingerprint surfaces are sampled across page, frame and worker without claiming masking',async()=>{
+ const p=f.service.create({name:'Native surface audit',launchUrl:origin});await f.service.launch(p.id);
+ const page=f.service.page(p.id),d=await f.service.diagnose(p.id);
+ const top=await page.evaluate(()=>{
+  const rect=document.body.getBoundingClientRect(),canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');
+  if(ctx)ctx.font='16px sans-serif';
+  return {hardware:navigator.hardwareConcurrency,rectWidth:rect.width,canvas:!!ctx,fontMetric:ctx?.measureText('Native sample').width??null,
+   audio:typeof OfflineAudioContext!=='undefined',webgl:!!document.createElement('canvas').getContext('webgl'),
+   media:!!navigator.mediaDevices?.enumerateDevices,platform:navigator.platform};
+ });
+ expect(top.hardware).toBe(d.observed.hardwareConcurrency);expect(top.platform).toBe(d.observed.platform);
+ expect(Number.isFinite(top.rectWidth)).toBe(true);expect(top.canvas).toBe(d.observed.capabilities.canvas);
+ expect(top.audio).toBe(d.observed.capabilities.audio);expect(top.media).toBe(d.observed.capabilities.mediaEnumeration);
+ expect(top.webgl?'available':'unavailable').toBe(d.observed.webglContexts.htmlCanvas);
+ if(top.fontMetric!==null)expect(Number.isFinite(top.fontMetric)).toBe(true);
+ await page.evaluate(src=>new Promise<void>((resolve,reject)=>{const frame=document.createElement('iframe');frame.onload=()=>resolve();frame.onerror=()=>reject(Error('controlled frame unavailable'));frame.src=src;document.body.append(frame);}),origin.replace('127.0.0.1','localhost'));
+ const frame=page.frames().find(frame=>frame.url().startsWith('http://localhost:'));expect(frame).toBeTruthy();
+ const framed=await frame!.evaluate(()=>({hardware:navigator.hardwareConcurrency,rect:document.body.getBoundingClientRect().width,canvas:!!document.createElement('canvas').getContext('2d')}));
+ expect(framed.hardware).toBeGreaterThan(0);expect(Number.isFinite(framed.rect)).toBe(true);expect(typeof framed.canvas).toBe('boolean');
+ const worker=await page.evaluate(()=>new Promise<{hardware:number;canvas:string;webgl:string}>((resolve,reject)=>{
+  const script="onmessage=()=>{let canvas='unavailable',webgl='unavailable';try{if(typeof OffscreenCanvas!=='undefined'){canvas=new OffscreenCanvas(2,2).getContext('2d')?'available':'unavailable';webgl=new OffscreenCanvas(2,2).getContext('webgl')?'available':'unavailable';}}catch{canvas='error';webgl='error';}postMessage({hardware:navigator.hardwareConcurrency,canvas,webgl});}";
+  const url=URL.createObjectURL(new Blob([script],{type:'text/javascript'})),w=new Worker(url);const timer=setTimeout(()=>{w.terminate();URL.revokeObjectURL(url);reject(Error('controlled worker timed out'));},5000);
+  w.onmessage=e=>{clearTimeout(timer);w.terminate();URL.revokeObjectURL(url);resolve(e.data);};w.onerror=()=>{clearTimeout(timer);w.terminate();URL.revokeObjectURL(url);reject(Error('controlled worker failed'));};w.postMessage(null);
+ }));
+ expect(worker.hardware).toBeGreaterThan(0);expect(['available','unavailable','error']).toContain(worker.canvas);expect(['available','unavailable','error']).toContain(worker.webgl);
+ expect(d.observed.webglContexts.worker).toBe('not-tested');
+ expect(d.capabilities.find(c=>c.property==='Client rectangles')?.mode).toBe('native-only');
+ expect(d.capabilities.find(c=>c.property==='Fonts')?.mode).toBe('partial');
+ expect(d.capabilities.find(c=>c.property==='Canvas and audio')?.mode).toBe('native-only');
+});
+
+test('Do Not Track header uses the assigned proxy without changing the route',async()=>{
+ const {httpProxy}=await import('./proxy-fixture'),proxy=await httpProxy(Number(new URL(origin).port));
+ try{
+  await f.service.proxySave(undefined,{name:'Controlled DNT proxy',protocol:'http',host:'127.0.0.1',port:proxy.port});
+  const assigned=f.service.snapshot().proxies[0]!.id;
+  const p=f.service.create({name:'Proxied DNT',launchUrl:origin+'/headers',proxyId:assigned,config:{doNotTrack:'request'}});
+  await f.service.launch(p.id);const headers=JSON.parse((await f.service.page(p.id).textContent('body'))!) as Record<string,string>;
+  expect(headers.dnt).toBe('1');expect(proxy.stats.forwarded).toBeGreaterThan(0);expect(f.service.profile(p.id).proxyId).toBe(assigned);
+  await f.service.stop(p.id);expect(f.service.profile(p.id).proxyId).toBe(assigned);
+ }finally{await f.service.shutdown();await proxy.close();}
+});
