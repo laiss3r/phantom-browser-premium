@@ -44,3 +44,9 @@ it('blocks contradictory custom user agents before launching or acquiring locks'
  const p=f.service.create({name:'Contradiction',config:{userAgent:'Mozilla/5.0 (iPhone) AppleWebKit/605.1.15 Safari/605.1.15'}});
  await expect(f.service.launch(p.id)).rejects.toThrow('Chromium major');expect(f.service.running.size).toBe(0);expect(fs.existsSync(path.join(p.directory,'.phantom-lock'))).toBe(false);
 });
+
+it('accepts only the explicit experimental WebGL policy and leaves legacy profiles on native default',()=>{
+ expect(configSchema.parse({}).webglPolicy).toBeUndefined();
+ expect(configSchema.parse({webglPolicy:'limit-html-canvas'}).webglPolicy).toBe('limit-html-canvas');
+ for(const value of ['spoof','disable-all',true,42])expect(configSchema.safeParse({webglPolicy:value}).success).toBe(false);
+});

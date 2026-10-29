@@ -211,3 +211,72 @@ test('actual proxy authentication rejection is never a country connection succes
  const {httpProxy}=await import('./proxy-fixture');const proxy=await httpProxy(Number(new URL(origin).port),'correct:correct');
  try{const id=await f.service.proxySave(undefined,{name:'Wrong country credentials',protocol:'http',host:'127.0.0.1',port:proxy.port,username:'wrong',password:'wrong'});const result=await f.service.locations.verify(id,'DE',origin+'/geo');expect(result.state).toBe('authentication-required');expect(result.ip).toBe(null);expect(proxy.stats.challenges).toBeGreaterThan(0);expect(proxy.stats.forwarded).toBe(0);expect(JSON.stringify(f.service.snapshot())).not.toContain('wrong:wrong');}finally{await proxy.close();}
 });
+
+test('permission defaults and geolocation revocation remain isolated across persistent profiles',async()=>{
+ const a=f.service.create({name:'Permission default',launchUrl:origin});
+ const b=f.service.create({name:'Permission consent',launchUrl:origin,config:{geolocationPermission:'allow',geolocation:{latitude:1,longitude:2}}});
+ await f.service.launch(a.id);await f.service.launch(b.id);
+ const permissions=async(id:string)=>f.service.page(id).evaluate(async()=>{
+  const read=async(name:PermissionName)=>(await navigator.permissions.query({name})).state;
+  return {geolocation:await read('geolocation'),camera:await read('camera' as PermissionName),microphone:await read('microphone' as PermissionName)};
+ });
+ const location=async(id:string)=>f.service.page(id).evaluate(()=>new Promise<string>(resolve=>navigator.geolocation.getCurrentPosition(p=>resolve(`${p.coords.latitude},${p.coords.longitude}`),e=>resolve(`error:${e.code}`),{timeout:3000})));
+ const media=async(id:string,kind:'audio'|'video')=>f.service.page(id).evaluate(async kind=>{try{const stream=await navigator.mediaDevices.getUserMedia({[kind]:true});stream.getTracks().forEach(track=>track.stop());return 'unexpected grant';}catch(e){return (e as DOMException).name;}},kind);
+ expect(await permissions(a.id)).toEqual({geolocation:'denied',camera:'denied',microphone:'denied'});
+ expect(await permissions(b.id)).toEqual({geolocation:'granted',camera:'denied',microphone:'denied'});
+ expect(await location(a.id)).toBe('error:1');expect(await location(b.id)).toBe('1,2');
+ // Machines without a matching device can report NotFoundError before checking permission.
+ for(const id of [a.id,b.id])for(const kind of ['audio','video'] as const)expect(['NotAllowedError','NotFoundError']).toContain(await media(id,kind));
+ await f.service.page(b.id).goto(origin.replace('127.0.0.1','localhost'));expect((await permissions(b.id)).geolocation).toBe('granted');expect(await location(b.id)).toBe('1,2');
+ await f.service.stop(b.id);await f.service.launch(b.id);
+ expect((await permissions(b.id)).geolocation).toBe('granted');expect((await permissions(a.id)).geolocation).toBe('denied');
+ await f.service.stop(b.id);
+ f.service.edit(b.id,{name:'Permission consent',launchUrl:origin,config:{geolocationPermission:'deny',geolocation:{latitude:1,longitude:2}}});
+ await f.service.launch(b.id);
+ expect(await permissions(b.id)).toEqual({geolocation:'denied',camera:'denied',microphone:'denied'});
+ expect(await location(b.id)).toBe('error:1');expect((await permissions(a.id)).geolocation).toBe('denied');
+ await f.service.stop(b.id);await f.service.launch(b.id);expect((await permissions(b.id)).geolocation).toBe('denied');
+});
+
+test('persistent cookies and IndexedDB stay independent across profile and service restarts',async()=>{
+ const a=f.service.create({name:'Persistent A',launchUrl:origin}),b=f.service.create({name:'Persistent B',launchUrl:origin});
+ const write=async(id:string,value:string)=>f.service.page(id).evaluate(async value=>{
+  document.cookie=`persistent=${value}; max-age=3600; path=/`;localStorage.setItem('persistent',value);
+  const db=await new Promise<IDBDatabase>((resolve,reject)=>{const r=indexedDB.open('isolation',1);r.onupgradeneeded=()=>r.result.createObjectStore('values');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
+  await new Promise<void>((resolve,reject)=>{const tx=db.transaction('values','readwrite');tx.objectStore('values').put(value,'key');tx.oncomplete=()=>resolve();tx.onerror=()=>reject(tx.error);});db.close();
+ },value);
+ const read=async(id:string)=>f.service.page(id).evaluate(async()=>{
+  const db=await new Promise<IDBDatabase>((resolve,reject)=>{const r=indexedDB.open('isolation',1);r.onupgradeneeded=()=>r.result.createObjectStore('values');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
+  const value=await new Promise<string|undefined>((resolve,reject)=>{const r=db.transaction('values').objectStore('values').get('key');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});db.close();return {cookie:document.cookie,local:localStorage.getItem('persistent'),indexed:value??null};
+ });
+ await f.service.launch(a.id);await write(a.id,'alpha');await f.service.launch(b.id);
+ expect(await read(b.id)).toEqual({cookie:'',local:null,indexed:null});await write(b.id,'beta');
+ await f.service.shutdown();f.db.close();
+ const {Database}=await import('../src/main/database'),{Service}=await import('../src/main/service');
+ f.db=await Database.open(path.join(f.root,'test.sqlite'));f.service=new Service(f.db,f.root,f.secrets,true);
+ await f.service.launch(a.id);await f.service.launch(b.id);
+ expect(await read(a.id)).toEqual({cookie:'persistent=alpha',local:'alpha',indexed:'alpha'});
+ expect(await read(b.id)).toEqual({cookie:'persistent=beta',local:'beta',indexed:'beta'});
+});
+
+test('experimental WebGL request is profile-local, observable and honest about OffscreenCanvas',async()=>{
+ const standard=f.service.create({name:'Native WebGL',launchUrl:origin});
+ const limited=f.service.create({name:'Limited WebGL',launchUrl:origin,config:{webglPolicy:'limit-html-canvas'}});
+ await f.service.launch(standard.id);await f.service.launch(limited.id);
+ const canvasState=async(id:string)=>f.service.page(id).evaluate(()=>{
+  const html=!!document.createElement('canvas').getContext('webgl');const html2=!!document.createElement('canvas').getContext('webgl2');
+  let offscreen:'available'|'unavailable'|'error'='unavailable';try{if(typeof OffscreenCanvas!=='undefined')offscreen=new OffscreenCanvas(2,2).getContext('webgl')?'available':'unavailable';}catch{offscreen='error';}
+  return {htmlCanvas:html?'available':'unavailable',htmlWebgl2:html2?'available':'unavailable',offscreenCanvas:offscreen};
+ });
+ const before=await canvasState(standard.id),partial=await canvasState(limited.id);
+ expect(partial.htmlCanvas).toBe('unavailable');expect(partial.htmlWebgl2).toBe('unavailable');
+ const observed=await f.service.diagnose(limited.id);
+ expect(observed.launchPolicy.webglRequested).toBe('limit-html-canvas');expect(observed.launchPolicy.webglArgumentObserved).toBe(true);
+ expect(observed.observed.webglContexts).toEqual({htmlCanvas:partial.htmlCanvas,offscreenCanvas:partial.offscreenCanvas,worker:'not-tested'});
+ expect(observed.limitations.join(' ')).toContain('OffscreenCanvas and workers may still expose WebGL');
+ expect(await canvasState(standard.id)).toEqual(before);
+ await f.service.stop(limited.id);await f.service.launch(limited.id);
+ expect((await canvasState(limited.id)).htmlCanvas).toBe('unavailable');expect(f.service.profile(limited.id).config.webglPolicy).toBe('limit-html-canvas');
+ expect(f.service.profile(standard.id).config.webglPolicy).toBeUndefined();
+ const native=await f.service.diagnose(standard.id);expect(native.launchPolicy.webglRequested).toBe('default');expect(native.launchPolicy.webglArgumentObserved).toBe(false);
+});

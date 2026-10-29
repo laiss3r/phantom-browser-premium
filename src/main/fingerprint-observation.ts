@@ -16,6 +16,10 @@ export async function observeFingerprint(page:Page) {
    try{const rendered=await Promise.race([audio.startRendering(),new Promise<null>(resolve=>{timer=setTimeout(()=>resolve(null),1500);})]);if(rendered)audioHash=await hash(new Float32Array(rendered.getChannelData(0)).buffer);}finally{if(timer)clearTimeout(timer);}
   }}catch{/* unsupported or blocked audio stays null */}
   const gl=document.createElement('canvas').getContext('webgl'),debug=gl?.getExtension('WEBGL_debug_renderer_info');
+  // Presence checks only: do not read extra device identifiers or treat failure as proof of protection.
+  let offscreenWebgl:'available'|'unavailable'|'error'='unavailable';
+  try{if(typeof OffscreenCanvas!=='undefined')offscreenWebgl=new OffscreenCanvas(2,2).getContext('webgl')?'available':'unavailable';}catch{offscreenWebgl='error';}
+  const webglContexts={htmlCanvas:gl?'available':'unavailable',offscreenCanvas:offscreenWebgl,worker:'not-tested'} as const;
   type Hints={brands:{brand:string;version:string}[];mobile:boolean;platform:string;getHighEntropyValues:(names:string[])=>Promise<{architecture?:string;bitness?:string;platform?:string;mobile?:boolean;platformVersion?:string;fullVersionList?:{brand:string;version:string}[];model?:string;wow64?:boolean}>};
   const hints=(navigator as Navigator&{userAgentData?:Hints}).userAgentData;
   let highEntropy:Awaited<ReturnType<Hints['getHighEntropyValues']>>|null=null;
@@ -47,7 +51,7 @@ export async function observeFingerprint(page:Page) {
    colorScheme:matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light',reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches,
    hardwareConcurrency:navigator.hardwareConcurrency,deviceMemory:(navigator as Navigator&{deviceMemory?:number}).deviceMemory??null,platform:navigator.platform,
    clientHints:hints?{brands:hints.brands,mobile:hints.mobile,platform:hints.platform}:null,highEntropyClientHints:highEntropy,
-   webglVendor:gl?.getParameter(gl.VENDOR) as string|null,webglRenderer:gl?.getParameter(gl.RENDERER) as string|null,
+   webglContexts,webglVendor:gl?.getParameter(gl.VENDOR) as string|null,webglRenderer:gl?.getParameter(gl.RENDERER) as string|null,
    unmaskedWebglVendor:debug?gl?.getParameter(debug.UNMASKED_VENDOR_WEBGL) as string:null,unmaskedWebglRenderer:debug?gl?.getParameter(debug.UNMASKED_RENDERER_WEBGL) as string:null,
    canvas:{status:canvasHash?'measured-native':'unavailable',sha256:canvasHash},audio:{status:audioHash?'measured-native':'unavailable',sha256:audioHash},
    geolocation,
