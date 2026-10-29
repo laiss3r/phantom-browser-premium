@@ -1,3 +1,4 @@
+import {minimizeDiagnosticHistory} from './diagnostic-privacy';
 import {countryName} from '../shared/countries';
 import {LocationWorkflow} from './location-workflow';
 import {parseProxyImport} from '../shared/proxy-import';
@@ -631,7 +632,7 @@ export class Service {
     const limitations=['Native hardware/graphics/canvas/audio/font/media behavior is measured, not spoofed','Canvas/audio hashes and native details are fingerprint identifiers: keep local diagnostic data private','Local ICE uses no STUN/TURN and records no candidate addresses; public DNS/WebRTC leak protection is not certified',
       'The requested UDP policy is not a firewall: Linux loopback STUN still sent UDP with an HTTP proxy; public/Windows STUN behavior remains unverified','Client hints and permission policies can be unavailable on insecure or restricted origins; unavailable is not a successful verification'];
     const result={expected,observed,inconsistencies,capabilities:fingerprintCapabilities,launchPolicy:{requested:expected.webrtcPolicy??'default',nonProxiedUDPArgumentObserved:policyArgumentObserved},limitations,processId:this.running.get(id)?.pid??null};
-    this.db.transaction(()=>this.db.run('INSERT INTO diagnostics VALUES(?,?,?,?)',[randomUUID(),id,now(),JSON.stringify(result)]));
+    this.db.transaction(()=>this.db.run('INSERT INTO diagnostics VALUES(?,?,?,?)',[randomUUID(),id,now(),JSON.stringify(minimizeDiagnosticHistory(result))]));
     return result;
   }
 
