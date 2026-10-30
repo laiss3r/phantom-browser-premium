@@ -17,3 +17,8 @@ it('does not save an observation from a profile stopped while diagnosis was pend
  vi.spyOn(observer,'observeFingerprint').mockImplementation(()=>new Promise(done=>{resolve=done;}));const task=f.service.diagnose(p.id).catch(e=>e as Error);f.service.running.delete(p.id);resolve({} as Awaited<ReturnType<typeof observer.observeFingerprint>>);expect((await task as Error).message).toContain('profile stopped');expect(f.service.snapshot().diagnostics).toEqual([]);
  }finally{f.service.running.clear();vi.restoreAllMocks();await f.cleanup();}
 });
+it('does not run or store diagnostics when the profile explicitly disables page scripts',async()=>{
+ const f=await fixture();try{const p=f.service.create({name:'Restricted diagnostic',config:{pageScripts:'disabled'}});vi.spyOn(f.service,'page').mockReturnValue({} as Page);const observe=vi.spyOn(observer,'observeFingerprint');
+ await expect(f.service.diagnose(p.id)).rejects.toThrow('Fingerprint diagnostics are not run while page scripts are disabled');expect(observe).not.toHaveBeenCalled();expect(f.service.snapshot().diagnostics).toEqual([]);
+ }finally{vi.restoreAllMocks();await f.cleanup();}
+});

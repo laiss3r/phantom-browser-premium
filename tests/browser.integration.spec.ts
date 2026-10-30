@@ -1,6 +1,7 @@
 import {test,expect} from '@playwright/test';import http from 'node:http';import fs from 'node:fs';import path from 'node:path';import {fixture} from './helpers';
 let f:Awaited<ReturnType<typeof fixture>>;let server:http.Server;let origin:string;
 test.beforeEach(async()=>{f=await fixture();server=http.createServer((_req,res)=>{if(_req.url==='/sw.js'){res.setHeader('Content-Type','application/javascript');res.end("self.addEventListener('install',()=>self.skipWaiting());self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));self.addEventListener('fetch',e=>{if(new URL(e.request.url).pathname==='/worker-controlled')e.respondWith(new Response('profile-worker-active'));});");return;}
+if(_req.url==='/script-probe'){res.setHeader('Content-Type','text/html');res.end("<!doctype html><div id='script-result'>not-run</div><script>document.getElementById('script-result').textContent='ran'</script>");return;}
 if(_req.url==='/geo'){res.setHeader('Content-Type','application/json');res.end(JSON.stringify({ip:'8.8.8.8',country_code:'DE',timezone:'Europe/Berlin',languages:'de-DE,en'}));return;}
 if(_req.url==='/headers'){res.setHeader('Content-Type','application/json');res.end(JSON.stringify(_req.headers));return;}
 if(_req.url==='/ip-invalid'){res.setHeader('Content-Type','application/json');res.end('{"ip":"deadbeef"}');return;}
@@ -371,4 +372,38 @@ test('experimental canvas readback request is profile-local and observable acros
  await f.service.stop(limited.id);await f.service.launch(limited.id);expect((await read(limited.id)).getImageData).toBe('SecurityError');
  const unchanged=await f.service.diagnose(native.id);expect(unchanged.launchPolicy.canvasRequested).toBe('default');expect(unchanged.launchPolicy.canvasArgumentObserved).toBe(false);expect(unchanged.observed.canvasReadback).toBe('allowed');
  await f.service.stop(limited.id);f.service.edit(limited.id,{name:'Canvas limit',launchUrl:origin,config:{canvasPolicy:'default'}});await f.service.launch(limited.id);expect((await read(limited.id)).getImageData).toBe('allowed');expect(await f.service.page(limited.id).evaluate(()=>({cookie:document.cookie,storage:localStorage.getItem('saved')}))).toEqual({cookie:'persist=yes',storage:'yes'});
+});
+
+test('page script restriction leaves native audio and existing service workers observable',async()=>{
+ const p=f.service.create({name:'Script restriction',launchUrl:origin+'/script-probe'});
+ const other=f.service.create({name:'Unrestricted profile',launchUrl:origin+'/script-probe'});
+ await f.service.launch(p.id);await f.service.launch(other.id);
+ expect(await f.service.page(p.id).locator('#script-result').textContent()).toBe('ran');
+ expect(await f.service.page(other.id).locator('#script-result').textContent()).toBe('ran');
+ await f.service.page(p.id).evaluate(async()=>{document.cookie='kept=yes; max-age=3600; path=/';localStorage.setItem('kept','yes');await navigator.serviceWorker.register('/sw.js');await navigator.serviceWorker.ready;});
+ await expect.poll(()=>f.service.page(p.id).evaluate(()=>!!navigator.serviceWorker.controller)).toBe(true);
+ await f.service.stop(p.id);f.service.edit(p.id,{name:'Script restriction',launchUrl:origin+'/script-probe',config:{pageScripts:'disabled'}});await f.service.launch(p.id);
+ const page=f.service.page(p.id);expect(await page.locator('#script-result').textContent()).toBe('not-run');
+ expect(await f.service.page(other.id).locator('#script-result').textContent()).toBe('ran');
+ // Page-side load callbacks are themselves disabled; Playwright observes the frame directly.
+ await page.evaluate(src=>{const iframe=document.createElement('iframe');iframe.src=src;document.body.append(iframe);},origin.replace('127.0.0.1','localhost')+'/script-probe');
+ await expect(page.frameLocator('iframe').locator('#script-result')).toHaveText('not-run');
+ const nativeAudio=await page.evaluate(async()=>{const c=new OfflineAudioContext(1,32,44100);return (await c.startRendering()).length;});expect(nativeAudio).toBe(32);
+ await expect(f.service.diagnose(p.id)).rejects.toThrow('Fingerprint diagnostics are not run while page scripts are disabled');expect(f.service.snapshot().diagnostics).toHaveLength(0);
+ const workerResponse=await page.goto(origin+'/worker-controlled');expect(await workerResponse!.text()).toBe('profile-worker-active');
+ await f.service.stop(p.id);f.service.edit(p.id,{name:'Script restriction',launchUrl:origin+'/script-probe',config:{pageScripts:'default'}});await f.service.launch(p.id);
+ expect(await f.service.page(p.id).locator('#script-result').textContent()).toBe('ran');
+ expect(await f.service.page(p.id).evaluate(()=>({cookie:document.cookie,storage:localStorage.getItem('kept')}))).toEqual({cookie:'kept=yes',storage:'yes'});
+});
+
+test('page script restriction keeps the assigned proxy and fails closed on proxy outage',async()=>{
+ const {httpProxy}=await import('./proxy-fixture'),proxy=await httpProxy(Number(new URL(origin).port));
+ try{
+  await f.service.proxySave(undefined,{name:'Controlled script proxy',protocol:'http',host:'127.0.0.1',port:proxy.port});
+  const assigned=f.service.snapshot().proxies[0]!.id;
+  const p=f.service.create({name:'Restricted routed profile',launchUrl:origin+'/script-probe',proxyId:assigned,config:{pageScripts:'disabled'}});
+  await f.service.launch(p.id);expect(await f.service.page(p.id).locator('#script-result').textContent()).toBe('not-run');expect(proxy.stats.forwarded).toBeGreaterThan(0);
+  await f.service.stop(p.id);expect(f.service.profile(p.id).proxyId).toBe(assigned);await proxy.close();
+  await expect(f.service.launch(p.id)).rejects.toThrow('launch failed');expect(f.service.profile(p.id).proxyId).toBe(assigned);
+ }finally{await f.service.shutdown();await proxy.close();}
 });

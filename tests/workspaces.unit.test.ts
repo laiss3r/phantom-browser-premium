@@ -62,3 +62,9 @@ it('validates the opt-in experimental canvas readback request and preserves nati
  expect(configSchema.parse({canvasPolicy:'block-readback'}).canvasPolicy).toBe('block-readback');
  for(const value of ['mask','noise','block-all',true,42])expect(configSchema.safeParse({canvasPolicy:value}).success).toBe(false);
 });
+
+it('validates opt-in page script restriction without changing legacy defaults',()=>{
+ expect(configSchema.parse({}).pageScripts).toBeUndefined();
+ expect(configSchema.parse({pageScripts:'disabled'}).pageScripts).toBe('disabled');
+ for(const value of ['block-audio','masked',true,0])expect(configSchema.safeParse({pageScripts:value}).success).toBe(false);
+});

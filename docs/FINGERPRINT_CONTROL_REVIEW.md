@@ -77,3 +77,61 @@ installed-application smoke step. This is not CI evidence for this follow-up.
 The earlier run 40948729147 failed its Windows installed smoke step; its
 root cause had not been established here. No new Windows installer was built
 or tested for this follow-up.
+
+## Page-script restriction and audio investigation — 2026-10-30
+
+An opt-in `pageScripts: 'disabled'` profile setting requests Playwright's
+persistent-context `javaScriptEnabled: false`. Existing and new profiles remain
+on native behavior unless the user explicitly changes it and relaunches. This is
+**a page-script restriction, not audio masking or a fingerprint identity**. It
+can break sites, logins, media, accessibility and automation. Styles, images,
+network requests and other non-JavaScript mechanisms may still expose data.
+
+In a controlled pinned Linux Chromium test, inline website scripts did not run
+in the top-level page or a cross-origin iframe. A separate unrestricted profile
+still ran scripts. Importantly, an already-registered service worker continued
+to intercept navigations after the setting was enabled; its stored registration
+was not removed. Privileged Playwright evaluation also rendered a native offline
+audio buffer despite page scripts being disabled. Do not infer that audio is
+blocked, that all scripts or workers are stopped, or that a fingerprint is
+masked. Shared workers, extension/background contexts, Windows, GPU-specific
+paths and every frame/target lifecycle are not certified by these tests.
+
+Fingerprint diagnostics are **not run** while this setting is enabled: the
+normal diagnostic relies on page event callbacks/timers, which can stop running
+and cause timeouts. The application returns an explicit error and stores no
+result. Turn page scripts back on and relaunch to run diagnostics; those later
+results describe that later configuration, not the restricted session.
+Privileged automation can still execute code despite the restriction. Existing
+cookies, localStorage and service-worker registrations are not deleted.
+
+The tests exercise opt-in and revocation, profile isolation, persisted
+cookie/localStorage, existing service workers, encrypted backup through the
+manager UI, and an assigned proxy with a fail-closed proxy outage. They do not
+prove protection against tracking.
+
+Controlled pinned Linux/headless Chromium probes found that each of
+`--blink-settings=webAudioEnabled=false`, `--disable-webaudio`,
+`--disable-blink-features=WebAudio`, and `--mute-audio` left
+`OfflineAudioContext` available and rendering the same oscillator samples as
+native default. None was shipped as an audio control. Chromium DevTools'
+experimental `CSS.setLocalFontsEnabled` concerns `local()` in `@font-face`, not
+an installed-font inventory; it is target-scoped and not qualified for
+profile-wide frame/worker consistency. See [Chrome's DevTools rendering
+documentation](https://developer.chrome.com/docs/devtools/rendering/apply-effects).
+No font, CPU/RAM, media-device, GPU identity, client-rectangle, platform or
+plugin masking is added by this setting.
+
+As of the official Chrome for Testing channel check on 2026-10-30, Stable was
+`156.0.8078.80` versus the bundled `156.0.8078.4`. This is a version gap, not
+an assertion of a particular CVE; the existing reviewed-update and Windows
+installer gates remain open. Source:
+[Chrome for Testing last-known-good versions](https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions.json).
+
+Validation for this page-script change on Linux x64 / Node 24.22.0:
+TypeScript, ESLint and production build passed; 185 unit tests passed
+(including the 12 runtime tests), the separate runtime suite passed all 12,
+and runtime integrity verified 303 pinned files. Chromium integration passed
+44 tests with one Windows-only test skipped; Electron/Xvfb passed 8 with one
+Windows DPAPI-only test skipped. The build retained the existing chunk-size
+warning. These are not results from an installed Windows application.

@@ -432,6 +432,7 @@ export class Service {
       timezoneId: c.timezoneId,
       colorScheme: c.colorScheme,
       reducedMotion: c.reducedMotion,
+      javaScriptEnabled: c.pageScripts === 'disabled' ? false : undefined,
       extraHTTPHeaders: c.doNotTrack === 'request' ? {'DNT':'1'} : undefined,
       userAgent: c.userAgent,
       geolocation: c.geolocation,
@@ -621,6 +622,7 @@ export class Service {
 
   async diagnose(id: string) {
     const page=this.page(id),expected=this.profile(id).config,runtime=this.running.get(id);
+    if(expected.pageScripts==='disabled')throw Error('Fingerprint diagnostics are not run while page scripts are disabled. Enable scripts and relaunch to diagnose; no result was saved.');
     let observed:Awaited<ReturnType<typeof observeFingerprint>>;
     try{observed=await this.bounded(observeFingerprint(page),6000);}catch{throw Error('Fingerprint observation failed or timed out; page details withheld');}
     if(!runtime||this.running.get(id)!==runtime||runtime.closing)throw Error('Fingerprint observation cancelled because the profile stopped');
@@ -635,8 +637,8 @@ export class Service {
     if(expected.canvasPolicy==='block-readback'&&canvasArgumentObserved===false)inconsistencies.push('Configured canvas readback launch argument not observed');
     if(expected.canvasPolicy==='block-readback'&&observed.canvasReadback==='allowed')inconsistencies.push('Diagnostic canvas readback was allowed despite requested restriction');
     const limitations=['Hardware, graphics, canvas, audio, font and media identities are native, not spoofed; optional canvas/WebGL restrictions are partial','Canvas/audio hashes and native details are fingerprint identifiers: keep local diagnostic data private','Local ICE uses no STUN/TURN and records no candidate addresses; public DNS/WebRTC leak protection is not certified',
-      'The requested UDP policy is not a firewall: Linux loopback STUN still sent UDP with an HTTP proxy; public/Windows STUN behavior remains unverified','HTML-canvas WebGL limit is experimental; OffscreenCanvas and workers may still expose WebGL. Context checks do not prove fingerprint protection', 'Canvas readback limit is experimental and may break sites; WebGL readPixels, font metrics and other fingerprinting paths may remain available', 'Do Not Track is a request header, not a guarantee that sites honor it; the JavaScript property is measured separately and the header is not verified by diagnostics', 'Client hints and permission policies can be unavailable on insecure or restricted origins; unavailable is not a successful verification'];
-    const result={expected,observed,inconsistencies,capabilities:fingerprintCapabilities,launchPolicy:{requested:expected.webrtcPolicy??'default',nonProxiedUDPArgumentObserved:policyArgumentObserved,webglRequested:expected.webglPolicy??'default',webglArgumentObserved,canvasRequested:expected.canvasPolicy??'default',canvasArgumentObserved},limitations,processId:this.running.get(id)?.pid??null};
+      'The requested UDP policy is not a firewall: Linux loopback STUN still sent UDP with an HTTP proxy; public/Windows STUN behavior remains unverified','HTML-canvas WebGL limit is experimental; OffscreenCanvas and workers may still expose WebGL. Context checks do not prove fingerprint protection', 'Canvas readback limit is experimental and may break sites; WebGL readPixels, font metrics and other fingerprinting paths may remain available', 'Page-script restriction does not guarantee that existing service workers stop; privileged automation can still execute JavaScript. Fingerprint diagnostics are not run while page scripts are disabled', 'Do Not Track is a request header, not a guarantee that sites honor it; the JavaScript property is measured separately and the header is not verified by diagnostics', 'Client hints and permission policies can be unavailable on insecure or restricted origins; unavailable is not a successful verification'];
+    const result={expected,observed,inconsistencies,capabilities:fingerprintCapabilities,launchPolicy:{requested:expected.webrtcPolicy??'default',nonProxiedUDPArgumentObserved:policyArgumentObserved,webglRequested:expected.webglPolicy??'default',webglArgumentObserved,canvasRequested:expected.canvasPolicy??'default',canvasArgumentObserved,pageScriptsRequested:expected.pageScripts??'default',pageScriptsApplied:'not-independently-verified'},limitations,processId:this.running.get(id)?.pid??null};
     this.db.transaction(()=>this.db.run('INSERT INTO diagnostics VALUES(?,?,?,?)',[randomUUID(),id,now(),JSON.stringify(minimizeDiagnosticHistory(result))]));
     return result;
   }

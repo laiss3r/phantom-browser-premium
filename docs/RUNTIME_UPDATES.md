@@ -1,3 +1,5 @@
+> **2026-10-30 official channel check:** Stable `156.0.8078.80` versus pinned `156.0.8078.4`. This records a version gap, not a claim about a specific CVE. The update and Windows qualification gates below remain open.
+
 > **Master-stage update:** Fresh official channel check reports Stable156.0.8078.47 vs pinned156.0.8078.4. A reviewed compatible Playwright/runtime update and new Windows gates are stable-release blockers. Do not generate new trust automatically from a download or silently substitute a fork; see MASTER_ENGINE_DECISION.md.
 
 # Chromium runtime update and rollback

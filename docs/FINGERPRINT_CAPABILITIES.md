@@ -23,7 +23,8 @@ The official [Playwright BrowserType documentation](https://playwright.dev/docs/
 | CPU/memory/platform | Native only | Actual `hardwareConcurrency`, available `deviceMemory`, `navigator.platform` and UA-hints platform observed. No arbitrary per-profile native hardware/OS overrides. |
 | WebGL | Partial experimental HTML-canvas limit | Optional `--disable-webgl` request; observed HTML canvas and OffscreenCanvas availability are reported independently. OffscreenCanvas and workers may still expose WebGL. The diagnostic does not test workers. The limit can break graphics and is not GPU identity control or comprehensive WebGL blocking. Native vendor/renderer is measured when available. |
 | Canvas | Partial experimental readback restriction | Optional `--disable-reading-from-canvas` request, off by default. Controlled Linux tests exercise 2D readback in pages, a cross-origin frame, OffscreenCanvas and a worker. WebGL `readPixels` and font metrics can still work. This may break sites and is not complete masking. |
-| Audio | Native only | SHA256 of a controlled offline-audio sample. No audio masking or noise injection. Updates/drivers can change outputs. |
+| Audio | Native only | SHA256 of a controlled offline-audio sample when diagnostics run. No audio masking or noise injection. Updates/drivers can change outputs. Disabling page scripts does not stop an existing service worker from accessing native APIs. |
+| Page scripts | Partial, opt-in | Requests that website JavaScript not execute in pages. Existing service workers and privileged automation may still execute code; other fingerprinting surfaces remain. Can break sites; diagnostics are not run while enabled. Not audio masking. |
 | Client rectangles | Native only | Native DOM layout; no masking or geometry noise. |
 | Do Not Track | Partial | Optional `DNT: 1` request header; native `navigator.doNotTrack` is observed separately. Sites may ignore it; not a privacy guarantee or fingerprint mask. |
 | Plugins | Native only | No per-profile plugin identity or plugin toggle. |
@@ -35,7 +36,7 @@ The official [Playwright BrowserType documentation](https://playwright.dev/docs/
 
 ## Diagnostics and privacy
 
-Run **Fingerprint Diagnostics** against a running profile on an origin you control. Secure-context features may be unavailable or permission-policy-limited on other pages. Null/blocked/unavailable values are **not** successful verifications. No mismatches among observed fields is not a universal consistency/anonymity certificate.
+Run **Fingerprint Diagnostics** against a running profile on an origin you control. Diagnostics are not run while page scripts are disabled; an explicit error is returned and no diagnostic is saved. Secure-context features may be unavailable or permission-policy-limited on other pages. Null/blocked/unavailable values are **not** successful verifications. No mismatches among observed fields is not a universal consistency/anonymity certificate.
 
 Diagnostics do not call a third-party fingerprint service. They create detached controlled canvas/audio samples, enumerate device **kinds/counts only**, measure generic-font metrics and gather local ICE without external STUN/TURN. Hardware/graphics details and stable hashes are themselves fingerprint identifiers; protect the local app-data/diagnostic database. Public CI artifacts contain only explicit synthetic-profile observations from disposable CI machines, never user profiles.
 
