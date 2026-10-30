@@ -13,6 +13,12 @@ describe('persistent profiles',()=>{
 describe('validation and IPC',()=>{
  it('rejects invalid timezone, unsupported fields and inconsistent screen',()=>{expect(configSchema.safeParse({timezoneId:'Not/A_Zone'}).success).toBe(false);expect(configSchema.safeParse({canvasNoise:true}).success).toBe(false);expect(configSchema.safeParse({screen:{width:320,height:240}}).success).toBe(false);expect(profileInput.safeParse({name:'bad',launchUrl:'file:///etc/passwd'}).success).toBe(false);});
  it('rejects unknown IPC operations, path ids and arbitrary arguments',async()=>{expect(requestSchema.safeParse({action:'exec',command:'calc'}).success).toBe(false);expect(requestSchema.safeParse({action:'launch',id:'../../'}).success).toBe(false);expect((await dispatch(f.service,{action:'snapshot',extra:'untrusted'},host)).ok).toBe(false);});
+ it('restricts the PDF settings IPC to a profile id and rejects arbitrary navigation',async()=>{
+  const p=f.service.create({name:'PDF settings unit'});
+  expect(requestSchema.safeParse({action:'openPdfSettings',id:p.id}).success).toBe(true);
+  expect(requestSchema.safeParse({action:'openPdfSettings',id:p.id,url:'file:///etc/passwd'}).success).toBe(false);
+  const reply=await dispatch(f.service,{action:'openPdfSettings',id:p.id},host);expect(reply.ok).toBe(false);if(!reply.ok)expect(reply.error).toContain('Launch the profile first');
+ });
  it('authorizes only exact top-level owner frame',()=>{expect(authorized(1,1,'file:///app/index.html','file:///app/index.html',true)).toBe(true);expect(authorized(2,1,'file:///app/index.html','file:///app/index.html',true)).toBe(false);expect(authorized(1,1,'https://evil.test','file:///app/index.html',true)).toBe(false);expect(authorized(1,1,'file:///app/index.html','file:///app/index.html',false)).toBe(false);});
  it('starts service and reads all state without network access',()=>{expect(f.service.snapshot().profiles).toEqual([]);expect(f.service.snapshot().proxies).toEqual([]);});
 });

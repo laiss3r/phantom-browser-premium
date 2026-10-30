@@ -48,7 +48,11 @@ export async function observeFingerprint(page:Page) {
     try{navigator.geolocation.getCurrentPosition(position=>finish('observed',{latitude:position.coords.latitude,longitude:position.coords.longitude,accuracy:position.coords.accuracy}),()=>finish('unavailable',null),{timeout:1200,maximumAge:0});}catch{finish('unavailable',null);}
    });
   }
+  // Counts and PDF-viewer state only. Do not collect plugin or MIME names.
+  const plugins:{status:string;pdfViewerEnabled:boolean|null;pluginCount:number|null;mimeTypeCount:number|null;identities:string}={status:'unavailable',pdfViewerEnabled:null,pluginCount:null,mimeTypeCount:null,identities:'omitted'};
+  try{plugins.pdfViewerEnabled=typeof navigator.pdfViewerEnabled==='boolean'?navigator.pdfViewerEnabled:null;plugins.pluginCount=navigator.plugins.length;plugins.mimeTypeCount=navigator.mimeTypes.length;plugins.status='observed';}catch{/* do not mistake an unavailable value for a disabled viewer */}
   return {
+   plugins,
    userAgent:navigator.userAgent,language:navigator.language,languages:[...navigator.languages],timezone:Intl.DateTimeFormat().resolvedOptions().timeZone,
    viewport:{width:innerWidth,height:innerHeight},screen:{width:screen.width,height:screen.height},devicePixelRatio,
    colorScheme:matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light',reducedMotion:matchMedia('(prefers-reduced-motion: reduce)').matches,

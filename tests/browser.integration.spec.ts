@@ -1,6 +1,7 @@
 import {test,expect} from '@playwright/test';import http from 'node:http';import fs from 'node:fs';import path from 'node:path';import {fixture} from './helpers';
 let f:Awaited<ReturnType<typeof fixture>>;let server:http.Server;let origin:string;
 test.beforeEach(async()=>{f=await fixture();server=http.createServer((_req,res)=>{if(_req.url==='/sw.js'){res.setHeader('Content-Type','application/javascript');res.end("self.addEventListener('install',()=>self.skipWaiting());self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));self.addEventListener('fetch',e=>{if(new URL(e.request.url).pathname==='/worker-controlled')e.respondWith(new Response('profile-worker-active'));});");return;}
+if(_req.url==='/document.pdf'){res.setHeader('Content-Type','application/pdf');res.end('%PDF-1.4\n% controlled local fixture\n%%EOF');return;}
 if(_req.url==='/script-probe'){res.setHeader('Content-Type','text/html');res.end("<!doctype html><div id='script-result'>not-run</div><script>document.getElementById('script-result').textContent='ran'</script>");return;}
 if(_req.url==='/geo'){res.setHeader('Content-Type','application/json');res.end(JSON.stringify({ip:'8.8.8.8',country_code:'DE',timezone:'Europe/Berlin',languages:'de-DE,en'}));return;}
 if(_req.url==='/headers'){res.setHeader('Content-Type','application/json');res.end(JSON.stringify(_req.headers));return;}
@@ -406,4 +407,61 @@ test('page script restriction keeps the assigned proxy and fails closed on proxy
   await f.service.stop(p.id);expect(f.service.profile(p.id).proxyId).toBe(assigned);await proxy.close();
   await expect(f.service.launch(p.id)).rejects.toThrow('launch failed');expect(f.service.profile(p.id).proxyId).toBe(assigned);
  }finally{await f.service.shutdown();await proxy.close();}
+});
+
+test('Chromium PDF settings control reported plugin entries without changing other profiles',async()=>{
+ const p=f.service.create({name:'PDF choice',launchUrl:origin}),other=f.service.create({name:'Other PDF profile',launchUrl:origin});
+ const context=await f.service.launch(p.id);await f.service.launch(other.id);const page=f.service.page(p.id);
+ await page.evaluate(()=>{document.cookie='pdf-state=kept; max-age=3600; path=/';localStorage.setItem('pdf-state','kept');});
+ const observe=async()=>page.evaluate(()=>({viewer:navigator.pdfViewerEnabled,plugins:navigator.plugins.length,mimes:navigator.mimeTypes.length}));
+ expect(await observe()).toEqual({viewer:true,plugins:5,mimes:2});
+ const msg=await f.service.openPdfSettings(p.id);expect(msg).toContain('nothing was changed automatically');
+ const settings=context.pages().find(tab=>tab.url()==='chrome://settings/content/pdfDocuments');expect(settings).toBeTruthy();
+ await expect(settings!.getByRole('radio',{name:'Open PDFs in Chromium'})).toBeChecked();
+ expect(await observe()).toEqual({viewer:true,plugins:5,mimes:2}); // opening settings is not a preference change
+ await settings!.getByRole('radio',{name:'Download PDFs'}).click();await expect(settings!.getByRole('radio',{name:'Download PDFs'})).toBeChecked();
+ await page.reload();expect(await observe()).toEqual({viewer:false,plugins:0,mimes:0});
+ await page.evaluate(src=>{const frame=document.createElement('iframe');frame.src=src;document.body.append(frame);},origin.replace('127.0.0.1','localhost'));
+ await expect(page.frameLocator('iframe').locator('input')).toBeVisible();const frame=page.frames().find(frame=>frame.url().startsWith('http://localhost:'))!;
+ expect(await frame.evaluate(()=>({viewer:navigator.pdfViewerEnabled,plugins:navigator.plugins.length,mimes:navigator.mimeTypes.length}))).toEqual({viewer:false,plugins:0,mimes:0});
+ expect(await f.service.page(other.id).evaluate(()=>({viewer:navigator.pdfViewerEnabled,plugins:navigator.plugins.length,mimes:navigator.mimeTypes.length}))).toEqual({viewer:true,plugins:5,mimes:2});
+ const report=await f.service.diagnose(p.id);expect(report.observed.plugins).toEqual({status:'observed',pdfViewerEnabled:false,pluginCount:0,mimeTypeCount:0,identities:'omitted'});
+ const stored=f.service.snapshot().diagnostics[0]!.result as unknown as typeof report;expect(stored.observed.plugins).toEqual({status:'omitted-from-history',pdfViewerEnabled:null,pluginCount:null,mimeTypeCount:null,identities:'omitted'});
+ const downloadPromise=page.waitForEvent('download',{timeout:5000});await page.goto(origin+'/document.pdf').catch(()=>{});const download=await downloadPromise;expect(await download.failure()).toBeTruthy();
+ await settings!.close();await f.service.stop(p.id);await f.service.launch(p.id);
+ expect(await f.service.page(p.id).evaluate(()=>({viewer:navigator.pdfViewerEnabled,plugins:navigator.plugins.length,mimes:navigator.mimeTypes.length,cookie:document.cookie,storage:localStorage.getItem('pdf-state')}))).toEqual({viewer:false,plugins:0,mimes:0,cookie:'pdf-state=kept',storage:'kept'});
+ await f.service.stop(p.id);const archive=path.join(f.root,'pdf-choice.phantom.jwe');await f.service.backup(p.id,archive,'A controlled backup password!');const restored=await f.service.restore(archive,'A controlled backup password!');await f.service.launch(restored.id);
+ expect(await f.service.page(restored.id).evaluate(()=>({viewer:navigator.pdfViewerEnabled,plugins:navigator.plugins.length,mimes:navigator.mimeTypes.length}))).toEqual({viewer:false,plugins:0,mimes:0});
+ const restoredContext=f.service.running.get(restored.id)!.context!;await f.service.openPdfSettings(restored.id);const restoredSettings=restoredContext.pages().find(tab=>tab.url()==='chrome://settings/content/pdfDocuments')!;await restoredSettings.getByRole('radio',{name:'Open PDFs in Chromium'}).click();await restoredSettings.close();await f.service.page(restored.id).reload();
+ expect(await f.service.page(restored.id).evaluate(()=>({viewer:navigator.pdfViewerEnabled,plugins:navigator.plugins.length,mimes:navigator.mimeTypes.length}))).toEqual({viewer:true,plugins:5,mimes:2});
+});
+
+test('Chromium PDF settings are unavailable when page scripts are disabled',async()=>{
+ const p=f.service.create({name:'No page scripts',launchUrl:origin,config:{pageScripts:'disabled'}});const context=await f.service.launch(p.id);
+ await expect(f.service.openPdfSettings(p.id)).rejects.toThrow('Enable page scripts and relaunch');expect(context.pages()).toHaveLength(1);
+});
+
+test('opening Chromium PDF settings preserves proxy routing and fails closed on proxy outage',async()=>{
+ const {httpProxy}=await import('./proxy-fixture'),proxy=await httpProxy(Number(new URL(origin).port));
+ try{
+  await f.service.proxySave(undefined,{name:'PDF controlled proxy',protocol:'http',host:'127.0.0.1',port:proxy.port});const proxyId=f.service.snapshot().proxies[0]!.id;
+  const p=f.service.create({name:'PDF routed',launchUrl:origin,proxyId});const context=await f.service.launch(p.id);const forwarded=proxy.stats.forwarded;
+  await f.service.openPdfSettings(p.id);const settings=context.pages().find(tab=>tab.url()==='chrome://settings/content/pdfDocuments')!;await settings.getByRole('radio',{name:'Download PDFs'}).click();await settings.close();
+  await f.service.page(p.id).goto(origin+'/after-pdf-setting');expect(proxy.stats.forwarded).toBeGreaterThan(forwarded);expect(f.service.profile(p.id).proxyId).toBe(proxyId);
+  await f.service.stop(p.id);await proxy.close();await expect(f.service.launch(p.id)).rejects.toThrow('launch failed');expect(f.service.profile(p.id).proxyId).toBe(proxyId);
+ }finally{await f.service.shutdown();await proxy.close();}
+});
+
+test('native offline audio access paths are cross-checked in a page and cross-origin frame',async()=>{
+ const p=f.service.create({name:'Native audio API audit',launchUrl:origin});await f.service.launch(p.id);const page=f.service.page(p.id);
+ await page.evaluate(src=>new Promise<void>((resolve,reject)=>{const frame=document.createElement('iframe');frame.onload=()=>resolve();frame.onerror=()=>reject(Error('controlled frame unavailable'));frame.src=src;document.body.append(frame);}),origin.replace('127.0.0.1','localhost'));
+ const frame=page.frames().find(frame=>frame.url().startsWith('http://localhost:'))!;
+ // Synthetic oscillator only; do not save native samples or claim audio masking.
+ const observe=async()=>{
+  const context=new OfflineAudioContext(1,4096,44100),source=context.createOscillator(),analyser=context.createAnalyser();analyser.fftSize=256;source.type='triangle';source.frequency.value=440;source.connect(analyser);analyser.connect(context.destination);source.start(0);
+  const rendered=await context.startRendering(),channel=rendered.getChannelData(0),copied=new Float32Array(channel.length);rendered.copyFromChannel(copied,0);
+  const floats=new Float32Array(analyser.fftSize),bytes=new Uint8Array(analyser.fftSize);analyser.getFloatTimeDomainData(floats);analyser.getByteTimeDomainData(bytes);
+  return {samples:channel.length,matchingCopy:channel.every((v,i)=>v===copied[i]),finite:channel.every(Number.isFinite)&&floats.every(Number.isFinite),nonSilent:channel.some(v=>Math.abs(v)>0.01),analyserLength:floats.length,byteLength:bytes.length};
+ };
+ for(const observed of [await page.evaluate(observe),await frame.evaluate(observe)])expect(observed).toEqual({samples:4096,matchingCopy:true,finite:true,nonSilent:true,analyserLength:256,byteLength:256});
 });

@@ -184,6 +184,25 @@ export class Service {
     this.patch(id, {lastUsed:now()});
   }
 
+  /** Open only Chromium's fixed, local settings page. The user changes the
+   * preference in Chromium; the manager never edits browser preference files. */
+  async openPdfSettings(id: string) {
+    const runtime=this.running.get(id);
+    if (!runtime?.context || runtime.closing || runtime.closed) throw Error('Launch the profile first');
+    if (this.profile(id).config.pageScripts==='disabled') throw Error('Enable page scripts and relaunch before opening Chromium settings');
+    let tab:Page|undefined;
+    try {
+      tab=await runtime.context.newPage();
+      await tab.goto('chrome://settings/content/pdfDocuments',{waitUntil:'domcontentloaded',timeout:15000});
+      if(this.running.get(id)!==runtime||runtime.closing||runtime.closed)throw Error('Profile stopped');
+      await tab.bringToFront();
+      return 'Chromium PDF settings opened. Choose a setting in the browser; nothing was changed automatically.';
+    } catch {
+      if(tab&&!tab.isClosed())await tab.close().catch(()=>{});
+      throw Error('Unable to open Chromium PDF settings; no preference was changed by the manager');
+    }
+  }
+
   edit(id: string, input: unknown) {
     this.assertIdle(id);
     const v = profileInput.parse(input);

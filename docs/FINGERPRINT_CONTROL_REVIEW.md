@@ -22,7 +22,7 @@ as a vendor statement, not as independent proof of how its implementation works.
 | Media-device identity | Existing profile permission denial and observed kind counts; controlled page checks enumeration availability | No configurable reported device counts/labels/identities. Device-equipped and Windows tests remain open. Permission denial is not media identity masking. |
 | Client rectangles | Explicit **Diagnostic only** capability label; controlled page and cross-origin frame exercise native `getBoundingClientRect` | No geometry masking or noise. A future engine must account for layout, transforms, frames and DOM APIs. |
 | OS/platform | Existing native value and bounded native-compatible UA; page platform compared with diagnostic | No cross-OS identity controls. Platform, UA/CH, OS integrations and rendering consistency require browser-level qualification. |
-| Browser plugins | Explicit **Diagnostic only** label | No per-profile plugin identity or plugin toggle was implemented; no unsupported Chromium flag is represented as a working control. |
+| Browser plugins | Partial: open native Chromium PDF settings for a running profile and choose PDF behavior; live diagnostic reports viewer state and counts, not names | No arbitrary plugin identities or general plugin toggle. PDF downloads are not accepted by the manager. See the newer PDF follow-up below. |
 | Do Not Track | Optional per-profile **DNT: 1 HTTP request header**. Existing profiles stay on native default. The native `navigator.doNotTrack` value is observed separately and is not altered. | Sites may ignore the request; it is not a fingerprint mask. Diagnostics don't observe outgoing headers. Service-worker/background/network-wide behavior and Windows remain unqualified. |
 
 ## DNT request and boundaries
@@ -135,3 +135,66 @@ and runtime integrity verified 303 pinned files. Chromium integration passed
 44 tests with one Windows-only test skipped; Electron/Xvfb passed 8 with one
 Windows DPAPI-only test skipped. The build retained the existing chunk-size
 warning. These are not results from an installed Windows application.
+
+## Native PDF plugin control and diagnostics — 2026-10-30
+
+For a running profile with page scripts enabled, the manager can open the fixed
+`chrome://settings/content/pdfDocuments` page in that profile's Chromium
+window. The **user**, not the manager, chooses whether PDFs open inline. No
+browser preferences file is edited by the manager and opening settings alone
+does not change a preference. This is a partial native PDF viewer control, not
+an arbitrary plugin identity editor or a general plugin switch. The HTML
+standard defines the familiar PDF plugin names as compatibility entries, not a
+complete inventory of installed plugins:
+[WHATWG PDF viewing support](https://html.spec.whatwg.org/multipage/system-state.html#pdf-viewing-support).
+
+In pinned Linux Chromium, the initial inline setting reported
+`pdfViewerEnabled=true`, 5 plugin entries and 2 MIME entries. Selecting
+**Download PDFs** in Chromium reported false, 0 and 0 in the controlled page
+and a cross-origin frame. A separate profile was unaffected. The choice
+persisted across relaunch and an encrypted profile backup/restore; it could be
+changed back through Chromium. Cookies and localStorage survived. The manager
+uses `acceptDownloads: false`: the controlled PDF produced a failed download,
+so selecting downloads can leave PDFs neither displayed nor downloaded by this
+manager. This is an important compatibility tradeoff, not a privacy guarantee.
+An assigned proxy remained assigned and routed controlled requests; proxy
+outage did not trigger direct fallback.
+
+The diagnostic returns viewer state and plugin/MIME counts in its live result;
+it never reads plugin or MIME names. New stored diagnostic history omits all
+three values; previous records are not rewritten. The manager now shows the
+live result separately from saved history, with a clear button and an explicit
+identifier warning. Selecting another profile clears the visible live result.
+Chromium settings cannot be opened through this action while page scripts are
+disabled, because the native settings page relies on scripts. IPC accepts only
+a profile ID and a fixed settings page, not a supplied URL.
+
+Flags `--disable-pdf-extension`, `--disable-pdf-viewer`, `--disable-extensions`
+and `--disable-blink-features=PdfViewer` did **not** change the observed PDF
+plugin entries in controlled pinned Linux tests and were not shipped as plugin
+controls. A device-memory investigation also found `--enable-features=ReduceDeviceMemory`
+and `--enable-low-end-device-mode` did not change the observed `deviceMemory=2`
+on that Linux test host. The source for the exact pinned Chromium version uses
+an approximation with desktop limits of 2–32 GiB, not the older 8 GiB ceiling;
+see [pinned Chromium source](https://chromium.googlesource.com/chromium/src/+/refs/tags/156.0.8078.4/third_party/blink/common/device_memory/approximated_device_memory.cc).
+These observations do not implement custom RAM, CPU, font, GPU, audio,
+geometry or platform masking. An engine change remains a separate qualification
+and security-update effort.
+
+The native-audio regression test additionally compares `AudioBuffer.getChannelData`
+with `copyFromChannel` and exercises `AnalyserNode` float/byte time-domain APIs
+on a synthetic offline oscillator in both a page and cross-origin frame. It
+checks non-silent, finite outputs and consistent buffer copies without saving
+samples. This is a baseline for future engine work, not an audio identity
+control or a complete audio-fingerprinting defense.
+
+Local validation for this PDF/audio-test follow-up on Linux x64 / Node 24.22.0:
+TypeScript, ESLint and production build passed; 186 unit tests passed (including
+12 runtime tests), the separate 12-test runtime suite passed, and runtime
+integrity verified 303 pinned files. Chromium integration passed 48 tests with
+one Windows-only test skipped; Electron/Xvfb passed 9 tests with one Windows
+DPAPI-only test skipped. The build retained its existing chunk-size warning.
+GitHub Actions [run 41026052122](https://github.com/laiss3r/phantom-browser-premium/actions/runs/41026052122)
+passed Linux and Windows for the **prior** commit `03478b3`; it is not evidence
+for this follow-up. No new installed Windows application has been qualified for
+this follow-up.

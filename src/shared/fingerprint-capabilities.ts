@@ -8,7 +8,7 @@ export const fingerprintCapabilities=[
  {property:'WebGL',mode:'partial',detail:'Optional experimental HTML-canvas WebGL limit. OffscreenCanvas and workers may remain available. No GPU identity control or complete WebGL blocking.'},
  {property:'Client rectangles',mode:'native-only',detail:'Native layout measurements; no noise or browser-level client-rectangle masking.'},
  {property:'Do Not Track',mode:'partial',detail:'Optional DNT: 1 request header; navigator.doNotTrack is observed separately. No assurance sites honor the request.'},
- {property:'Browser plugins',mode:'native-only',detail:'No per-profile plugin identity or plugin-toggle controls; native browser behavior.'},
+ {property:'Browser plugins',mode:'partial',detail:'Chromium PDF settings can be opened for a running profile; the user changes PDF viewing in Chromium. Reported plugin counts may change. No arbitrary plugin identities or general plugin toggle.'},
  {property:'Canvas',mode:'partial',detail:'Experimental canvas readback restriction only; WebGL readPixels and font metrics may remain exposed. No noise or complete masking.'},
  {property:'Audio',mode:'native-only',detail:'Native offline-audio sample is measured by diagnostics when page scripts are enabled; no audio masking. Disabling page scripts does not stop existing service workers.'},
  {property:'Page scripts',mode:'partial',detail:'Opt-in page JavaScript restriction can break sites; existing service workers and privileged automation may still execute code. Not audio masking.'},

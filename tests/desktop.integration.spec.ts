@@ -94,3 +94,19 @@ test('default creation is name and country without API-key prompts, and direct p
 test('actual Electron profile table persists assigned country, loads offline flags, distinguishes mismatch and direct, and retries honestly',async()=>{
  const {checkCountryTable}=await import('./country-table-check');await checkCountryTable(test.info());
 });
+
+test('Electron exposes the real PDF settings action only for a running profile',async()=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'phantom-pdf-desktop-'));
+ const app=await electron.launch({args:['.',`--user-data-dir=${root}`,...(process.platform==='linux'?['--no-sandbox']:[])]});
+ try{
+  const page=await app.firstWindow();await page.getByRole('button',{name:'Fingerprint Diagnostics',exact:true}).click();
+  const button=page.getByRole('button',{name:'Open Chromium PDF settings',exact:true});await expect(button).toBeDisabled();
+  await expect(page.getByText(/manager does not change this setting automatically/)).toBeVisible();
+  const id=await page.evaluate(async()=>{const reply=await window.phantom!.request({action:'create',input:{name:'PDF desktop profile',notes:'',tags:[],proxyId:null,launchUrl:'',config:{version:1,viewport:{width:1280,height:800},locale:'en-US',timezoneId:'UTC',colorScheme:'dark',reducedMotion:'no-preference'}}});if(!reply.ok)throw Error(reply.error);return (reply.result as {profileId:string}).profileId;});
+  const launch=await page.evaluate(async id=>window.phantom!.request({action:'launch',id}),id);expect(launch.ok).toBe(true);
+  await expect(page.getByLabel('Profile to inspect')).toContainText('PDF desktop profile',{timeout:10000});await page.getByLabel('Profile to inspect').selectOption(id);await expect(button).toBeEnabled();await button.click();
+  await expect(page.getByText(/Chromium PDF settings opened/)).toBeVisible();
+  await page.getByRole('button',{name:'Run diagnostics',exact:true}).click();const live=page.locator('section').filter({has:page.getByRole('heading',{name:'Latest live observation'})});await expect(live).toBeVisible();await expect(live.locator('pre')).toContainText('"pdfViewerEnabled": true');await page.getByRole('button',{name:'Clear live results'}).click();await expect(live).not.toBeVisible();
+  const stop=await page.evaluate(async id=>window.phantom!.request({action:'stop',id}),id);expect(stop.ok).toBe(true);
+ }finally{await app.close();fs.rmSync(root,{recursive:true,force:true});}
+});
